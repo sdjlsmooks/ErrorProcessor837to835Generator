@@ -59,7 +59,7 @@ public class ErrorProcessor837to835Generator {
 	private HashMap<String, ErrorLineItem> errorMap = new HashMap<>();
 
 	/**
-	 * From Mockingbird - Claims that were rejected by Beacon. // RETRIEVED FROM DATABASE - 
+	 * From MockingBird - Claims that were rejected by Beacon. // RETRIEVED FROM DATABASE - 
 	 *     For use later (there may be problems in the requirements)  I am
 	 *     generating 835s that are perfectly valid according to the rules of 
 	 *     the 835, but not posting, more processing needed.
@@ -715,7 +715,7 @@ public class ErrorProcessor837to835Generator {
 		headerNumber.setAssignedNumber(1);
 		
 		++totalNumberOfSegments;
-		loop2000Detail.setHeaderNumber(new ArrayList<solutions.health.X12HCCProfessional.X12_835.HeaderNumber>());
+		loop2000Detail.setHeaderNumber(new ArrayList<>());
 		loop2000Detail.getHeaderNumber().add(headerNumber);
 		
 		

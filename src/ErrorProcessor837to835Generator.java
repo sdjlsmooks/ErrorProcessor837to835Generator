@@ -9,17 +9,17 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 
 import org.xml.sax.SAXException;
 
 import solutions.health.X12HCCProfessional.X12_835.X12835;
 import solutions.health.X12HCCProfessional.X12_835.X12835Factory;
 import solutions.health.X12HCCProfessional.X12_837.Loop2000ABillingProviderDetail;
+import solutions.health.X12HCCProfessional.X12_837.Loop2000BSubscriberHierarchicalLevel;
+import solutions.health.X12HCCProfessional.X12_837.Loop2010BBPayerName;
 import solutions.health.X12HCCProfessional.X12_837.ServiceDate;
 
-/**
- * 
- */
 
 /**
  * @author DavidL
@@ -156,7 +156,7 @@ public class ErrorProcessor837to835Generator {
 				return e;
 			}
 		}
-		return null; // Default - did not find encounter;
+		return null;
 	}
 	
 
@@ -370,22 +370,24 @@ public class ErrorProcessor837to835Generator {
 		solutions.health.X12HCCProfessional.X12_835.Loop1000APayerIdentification loop1000APayerIdentification = new solutions.health.X12HCCProfessional.X12_835.Loop1000APayerIdentification();
 		// N1 Segment
 		solutions.health.X12HCCProfessional.X12_835.PayerIdentification payerID = new solutions.health.X12HCCProfessional.X12_835.PayerIdentification();
-		payerID.setName(billingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2010BBPayerName().getPayerName().getLastName());
+		Loop2000BSubscriberHierarchicalLevel loop2000bSubscriberHierarchicalLevel = billingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0);
+		Loop2010BBPayerName loop2010bbPayerName = loop2000bSubscriberHierarchicalLevel.getLoop2010BBPayerName();
+		payerID.setName(loop2010bbPayerName.getPayerName().getLastName());
 		payerID.setEntityIDCode("PR"); // By Implementation Guide - PR = Payer
 		++totalNumberOfSegments;
 		loop1000APayerIdentification.setPayerIdentification(payerID);
 		
 		// N3 segment
 		solutions.health.X12HCCProfessional.X12_835.PayerAddress payerAddress = new solutions.health.X12HCCProfessional.X12_835.PayerAddress();
-		payerAddress.setAddressInformation(billingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2010BBPayerName().getPayerAddress().getAddressInformation());
+		payerAddress.setAddressInformation(loop2010bbPayerName.getPayerAddress().getAddressInformation());
 		++totalNumberOfSegments;
 		loop1000APayerIdentification.setPayerAddress(payerAddress);
 		
 		// N4 segment
 		solutions.health.X12HCCProfessional.X12_835.PayerCityStateZipCode payerCityStateZip = new solutions.health.X12HCCProfessional.X12_835.PayerCityStateZipCode();
-		payerCityStateZip.setCity(billingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2010BBPayerName().getPayerCityStateZipCode().getCity());
-		payerCityStateZip.setState(billingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2010BBPayerName().getPayerCityStateZipCode().getState());
-		payerCityStateZip.setPostalCode(billingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2010BBPayerName().getPayerCityStateZipCode().getPostalCode());
+		payerCityStateZip.setCity(loop2010bbPayerName.getPayerCityStateZipCode().getCity());
+		payerCityStateZip.setState(loop2010bbPayerName.getPayerCityStateZipCode().getState());
+		payerCityStateZip.setPostalCode(loop2010bbPayerName.getPayerCityStateZipCode().getPostalCode());
 		++totalNumberOfSegments;
 		loop1000APayerIdentification.setPayerCityStateZipCode(payerCityStateZip);			
 		
@@ -448,13 +450,13 @@ public class ErrorProcessor837to835Generator {
 		solutions.health.X12HCCProfessional.X12_835.ClaimPaymentInformation claimPaymentInfo = new solutions.health.X12HCCProfessional.X12_835.ClaimPaymentInformation();
 		
 		// This is the ***NEXTGEN Counter ID***		
-		nextGenEncounterID = billingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2000CPatientHierarchicalLevel().get(0).getLoop2300ClaimInformation().get(0).getClaimInformation().getClaimSubmitterIdentifier();
+		nextGenEncounterID = loop2000bSubscriberHierarchicalLevel.getLoop2000CPatientHierarchicalLevel().get(0).getLoop2300ClaimInformation().get(0).getClaimInformation().getClaimSubmitterIdentifier();
 		claimPaymentInfo.setClaimSubmitIdentifierWithFacility(nextGenEncounterID);
 		claimPaymentInfo.setClaimStatusCode("1");
 		
 		// HERE IS WHERE the BRP and CLP segment need to sum up according 
 		// to the balancing rules of the 835 Implementation Guide.
-		String claimPaymentAmountStr = billingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2000CPatientHierarchicalLevel().get(0).getLoop2300ClaimInformation().get(0).getClaimInformation().getMonetaryAmount();
+		String claimPaymentAmountStr = loop2000bSubscriberHierarchicalLevel.getLoop2000CPatientHierarchicalLevel().get(0).getLoop2300ClaimInformation().get(0).getClaimInformation().getMonetaryAmount();
 		Double claimPaymentAmount = Double.parseDouble(claimPaymentAmountStr);
 		totalPaymentForThis835 += claimPaymentAmount;
 		bpr.setMonetaryAmount(Double.toString(totalPaymentForThis835));
@@ -478,11 +480,11 @@ public class ErrorProcessor837to835Generator {
 		solutions.health.X12HCCProfessional.X12_835.PatientName patientName = new solutions.health.X12HCCProfessional.X12_835.PatientName();
 		patientName.setEntityIDCode("QC");// Implementation Guide QC==>Patient Name
 		patientName.setEntityTypeQualifier("1"); // Implementation Guide 1==>Person
-		patientName.setLastName(billingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2010BASubscriberName().getPatientName().getLastName());
-		patientName.setFirstName(billingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2010BASubscriberName().getPatientName().getFirstName());
-		patientName.setMiddleName(billingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2010BASubscriberName().getPatientName().getMiddleName());
-		patientName.setIdCodeQualifier(billingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2010BASubscriberName().getPatientName().getIdCodeQualifier()); 
-		currentMemberNumber = billingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2010BASubscriberName().getPatientName().getIdCode();
+		patientName.setLastName(loop2000bSubscriberHierarchicalLevel.getLoop2010BASubscriberName().getPatientName().getLastName());
+		patientName.setFirstName(loop2000bSubscriberHierarchicalLevel.getLoop2010BASubscriberName().getPatientName().getFirstName());
+		patientName.setMiddleName(loop2000bSubscriberHierarchicalLevel.getLoop2010BASubscriberName().getPatientName().getMiddleName());
+		patientName.setIdCodeQualifier(loop2000bSubscriberHierarchicalLevel.getLoop2010BASubscriberName().getPatientName().getIdCodeQualifier()); 
+		currentMemberNumber = loop2000bSubscriberHierarchicalLevel.getLoop2010BASubscriberName().getPatientName().getIdCode();
 		patientName.setIdCode(currentMemberNumber);
 		
 		// Add to final output.
@@ -494,13 +496,13 @@ public class ErrorProcessor837to835Generator {
 		
 		// This is the SVC Segment 
 		solutions.health.X12HCCProfessional.X12_835.ClaimSPI claimSPI = new solutions.health.X12HCCProfessional.X12_835.ClaimSPI();
-		claimSPI.setCompositeMPI(billingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2000CPatientHierarchicalLevel().get(0).getLoop2300ClaimInformation().get(0).getLoop2400ServiceLineNumber().get(0).getProfessionalService().getCompMedProcedID());
-		claimSPI.setSubmittedServiceCharge(billingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2000CPatientHierarchicalLevel().get(0).getLoop2300ClaimInformation().get(0).getLoop2400ServiceLineNumber().get(0).getProfessionalService().getMonetaryAmount());
-		claimSPI.setAmountPaid(billingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2000CPatientHierarchicalLevel().get(0).getLoop2300ClaimInformation().get(0).getLoop2400ServiceLineNumber().get(0).getProfessionalService().getMonetaryAmount());
+		claimSPI.setCompositeMPI(loop2000bSubscriberHierarchicalLevel.getLoop2000CPatientHierarchicalLevel().get(0).getLoop2300ClaimInformation().get(0).getLoop2400ServiceLineNumber().get(0).getProfessionalService().getCompMedProcedID());
+		claimSPI.setSubmittedServiceCharge(loop2000bSubscriberHierarchicalLevel.getLoop2000CPatientHierarchicalLevel().get(0).getLoop2300ClaimInformation().get(0).getLoop2400ServiceLineNumber().get(0).getProfessionalService().getMonetaryAmount());
+		claimSPI.setAmountPaid(loop2000bSubscriberHierarchicalLevel.getLoop2000CPatientHierarchicalLevel().get(0).getLoop2300ClaimInformation().get(0).getLoop2400ServiceLineNumber().get(0).getProfessionalService().getMonetaryAmount());
 			
 		++totalNumberOfSegments;
 		loop2110SPI.setClaimSPI(claimSPI);
-		ArrayList<solutions.health.X12HCCProfessional.X12_835.Loop2110SPI> loop2110SPIArray = new ArrayList<solutions.health.X12HCCProfessional.X12_835.Loop2110SPI>();
+		ArrayList<solutions.health.X12HCCProfessional.X12_835.Loop2110SPI> loop2110SPIArray = new ArrayList<>();
 		loop2110SPIArray.add(loop2110SPI);
 		loop2100.setLoop2110SPI(loop2110SPIArray);
 		
@@ -508,12 +510,12 @@ public class ErrorProcessor837to835Generator {
 		// This is the DTM*472 segment
 		solutions.health.X12HCCProfessional.X12_835.ServiceDate serviceDate = new solutions.health.X12HCCProfessional.X12_835.ServiceDate();
 		serviceDate.setDateTimeQualifier("472"); // Implementation Guide 472-->Service Date
-		ServiceDate original837ServiceDate = billingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2000CPatientHierarchicalLevel().get(0).getLoop2300ClaimInformation().get(0).getLoop2400ServiceLineNumber().get(0).getServiceDate();
+		ServiceDate original837ServiceDate = loop2000bSubscriberHierarchicalLevel.getLoop2000CPatientHierarchicalLevel().get(0).getLoop2300ClaimInformation().get(0).getLoop2400ServiceLineNumber().get(0).getServiceDate();
 		SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
 		String original837DateTimePeriod = original837ServiceDate.getDateTimePeriod();
 		Date parseOriginal837Date = formatter.parse(original837DateTimePeriod);
 		serviceDate.setDate(parseOriginal837Date);				
-		loop2110SPI.setServiceDate(new ArrayList<solutions.health.X12HCCProfessional.X12_835.ServiceDate>());
+		loop2110SPI.setServiceDate(new ArrayList<>());
 		++totalNumberOfSegments;
 		loop2110SPI.getServiceDate().add(serviceDate);
 		
@@ -1027,6 +1029,14 @@ public class ErrorProcessor837to835Generator {
 			
 			
 			for (String rejectedBeaconEncounterID : rejectedClaims.keySet()) {
+				
+				Set<String> original837KeySet = original837Detail.keySet();
+				if (!(original837KeySet.contains(rejectedBeaconEncounterID))) {
+					System.out.println("Rejected Beacon Encounter: "+rejectedBeaconEncounterID+" Not in original 837s, moving on");
+					continue; // sometimes the 837 file does not contain
+				}
+				
+				
 				List<ErrorLineItem> errorsForEncounter = getErrorsForEncounterID(rejectedBeaconEncounterID);				
 				System.out.println("REJECTED Beacon Encounter ID: " + rejectedBeaconEncounterID + " Number Errors: " +errorsForEncounter.size());
 				
@@ -1087,6 +1097,13 @@ public class ErrorProcessor837to835Generator {
 			// Loop through all accepted encounters
 			//for (String beaconEncounterID: acceptedEncounterMap.keySet()) {
 			for (String beaconEncounterID: acceptedClaims.keySet()) {
+				
+				Set<String> original837KeySet = original837Detail.keySet();
+				if (!(original837KeySet.contains(beaconEncounterID))) {
+					System.out.println("Beacon Encounter: "+beaconEncounterID+" Not in original 837s, moving on");
+					continue; // sometimes the 837 file does not contain
+				}
+				
 				System.out.println("BEACON Encounter: " + beaconEncounterID + " ------------------------------------------------");
 				System.out.println("START X12 835---------------------------------\n");
 				

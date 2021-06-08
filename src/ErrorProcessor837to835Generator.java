@@ -296,7 +296,8 @@ public class ErrorProcessor837to835Generator {
 		isa.setInterchangeVersionNumber("00501");
 		isa.setInterchangeControlNumber(35);
 		isa.setAcknowledgementRequested("1");
-		isa.setInterchangeUsageIndicator("T");
+		//isa.setInterchangeUsageIndicator("T");  // Per Implementation Guide "T" ==> Test Data
+		isa.setInterchangeUsageIndicator("P");    // Per Implementation Guide "P" ==> Production Data
 		isa.setComponentSeparator("\u1200"); // work around bug in Smooks 1.7 (doesn't output colon on EDI write")
 		                             		 // Use unicode \u1200 as a placeholder, do a string replace on toEDI output
 									 	     // This is due to the self-defining delimeters in X12, highly non-standard 

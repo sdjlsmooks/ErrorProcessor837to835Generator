@@ -1032,7 +1032,7 @@ public class ErrorProcessor837to835Generator {
 				
 				Set<String> original837KeySet = original837Detail.keySet();
 				if (!(original837KeySet.contains(rejectedBeaconEncounterID))) {
-					System.out.println("Rejected Beacon Encounter: "+rejectedBeaconEncounterID+" Not in original 837s, moving on");
+					System.out.println("Rejected Beacon Encounter: "+rejectedBeaconEncounterID+" Not in original 837s, NO SOURCE DATA moving on");
 					continue; // sometimes the 837 file does not contain
 				}
 				
@@ -1100,7 +1100,7 @@ public class ErrorProcessor837to835Generator {
 				
 				Set<String> original837KeySet = original837Detail.keySet();
 				if (!(original837KeySet.contains(beaconEncounterID))) {
-					System.out.println("Beacon Encounter: "+beaconEncounterID+" Not in original 837s, moving on");
+					System.out.println("Beacon Encounter: "+beaconEncounterID+" Not in original 837s, Not in original 837s, NO SOURCE DATA moving on");
 					continue; // sometimes the 837 file does not contain
 				}
 				

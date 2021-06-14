@@ -897,8 +897,8 @@ public class ErrorProcessor837to835Generator {
 			// SVC CAS Segment
 			solutions.health.X12HCCProfessional.X12_835.ServiceAdjustment casServiceAdjustment = new solutions.health.X12HCCProfessional.X12_835.ServiceAdjustment();
 			casServiceAdjustment.setServiceAdjGroupCode("CO"); // Per TERRI - all adjustments are CO
-		                                                   // Per Implementation GuidE CO==>Contractual Oblications
-		                                                   // Here is where the CLP  - SUM(CAS monetaryAmounts) === 0 (amount paid for the claim)
+		                                                       // Per Implementation GuidE CO==>Contractual Oblications
+		                                                       // Here is where the CLP  - SUM(CAS monetaryAmounts) === 0 (amount paid for the claim)
 			// Add EACH error found in the error file
 			// NOTE - The CAS segment may need to be broken into multiple 
 			//        segments if there are more than 6 errors found per claim.

@@ -5,8 +5,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.ArrayList; 
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -242,7 +241,7 @@ public class ErrorProcessor837to835Generator {
 	
 	/**
 	 * Helper to retrieve errors for a particular claim (encounter)
-	 * @param encounterID - The Enounter IT to search for
+	 * @param encounterID - The Encounter IT to search for
 	 * @return The list of errors for that encounter ID.  NULL if none found
 	 */
 	public List<ErrorLineItem> getErrorsForEncounterID(String encounterID) {
@@ -729,153 +728,152 @@ public class ErrorProcessor837to835Generator {
 		// Here is the actual CLAIM  -  CLP	 and SVC segment information
 		solutions.health.X12HCCProfessional.X12_835.Loop2000Detail loop2000Detail = new solutions.health.X12HCCProfessional.X12_835.Loop2000Detail();
 		
-		// LX segment (header)
-		solutions.health.X12HCCProfessional.X12_835.HeaderNumber headerNumber = new solutions.health.X12HCCProfessional.X12_835.HeaderNumber();
-		headerNumber.setAssignedNumber(1);
-		
-		++totalNumberOfSegments;
-		loop2000Detail.setHeaderNumber(new ArrayList<>());
-		loop2000Detail.getHeaderNumber().add(headerNumber);
-		
-		
-		transactionSet.setLoop2000Detail(new ArrayList<solutions.health.X12HCCProfessional.X12_835.Loop2000Detail>());
-		transactionSet.getLoop2000Detail().add(loop2000Detail);		
-		
-		// CLP SEGMENT
-		// The actual Claim information (Claim Payment)
-		solutions.health.X12HCCProfessional.X12_835.ClaimPaymentInformation claimPaymentInfo = new solutions.health.X12HCCProfessional.X12_835.ClaimPaymentInformation();
-		
-		// This is the ***NEXTGEN Counter ID***		
-		nextGenEncounterID = rejectedClaimPayerPayeeBillingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2000CPatientHierarchicalLevel().get(0).getLoop2300ClaimInformation().get(0).getClaimInformation().getClaimSubmitterIdentifier();
-		claimPaymentInfo.setClaimSubmitIdentifierWithFacility(nextGenEncounterID);
-		claimPaymentInfo.setClaimStatusCode("1");
-		
-		// HERE IS WHERE the BRP and CLP segment need to sum up according 
-		// to the balancing rules of the 835 Implementation Guide.
-		String claimPaymentAmountStr = rejectedClaimPayerPayeeBillingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2000CPatientHierarchicalLevel().get(0).getLoop2300ClaimInformation().get(0).getClaimInformation().getMonetaryAmount();
-		Double claimPaymentAmount = Double.parseDouble(claimPaymentAmountStr);
-		totalPaymentForThis835 += 0;
-		bpr.setMonetaryAmount(Double.toString(totalPaymentForThis835));
-		claimPaymentInfo.setMonetaryAmount(Double.toString(claimPaymentAmount));	// SUBMITTED CHARGES --> CLP03	== Amount4 == 0 ALL ADJUSTMENTS ARE SERVICE LINE LEVEL
-		claimPaymentInfo.setMonetaryAmount2(Double.toString(0));  // AMOUNT PAID == 0 -->  How will this affect balancing?  Amount5 = SUM(CAS Monetary Amounts)  Amount4 - Amount == CLP04
-		claimPaymentInfo.setMonetaryAmount3(Double.toString(0)); //   SO SUM(CAS Monetary Amount) == CLP03(claimPaymentAmount)
-		
-		//claimPaymentInfo.setMonetaryAmount3(Double.toString(0)); // PATIENT RESPOSIBILITY
-		claimPaymentInfo.setClaimFileIndicatorCode("MC"); // According to Implementation guide MC==Medicaid
-		claimPaymentInfo.setReferenceIdentification("1");
-		claimPaymentInfo.setFacilityCode("53");
-		
-		// CAS Segment
-		solutions.health.X12HCCProfessional.X12_835.ClaimAdjustment casClaimAdjustment = new solutions.health.X12HCCProfessional.X12_835.ClaimAdjustment();
-		casClaimAdjustment.setClaimAdjustmentGroupCode("CO"); // Per TERRI - all adjustments are CO
-		                                                      // Per Implementation GuidE CO==>Contractual Oblications
-		// Add EACH error found in the error file
-		// NOTE - ALL MONETARY ADJUSTMENTS ARE SERVICE LEVEL ADJUSTMENTS
-		// NOTE - The CAS segment may need to be broken into multiple 
-		//        segments if there are more than 6 errors found per claim.
-		int errorNumber = 0;
-		for (ErrorLineItem eli : errorsForEncounter) {
-			String x12Error = beaconToX12ErrorMap.get(eli.getErrorNum());
-			//System.out.println("CLP LEVEL REJECT PROCESSING ERROR: "+eli.getErrorNum()+" Maps to X12: "+x12Error);
-			switch (errorNumber) {
-			case 0:			
-				if (x12Error != null) {
-					casClaimAdjustment.setClaimAdjustmentReasonCode(x12Error);
-					casClaimAdjustment.setMonetaryAmount("0.0");                     
-					casClaimAdjustment.setQuantity(1);
-					++errorNumber;
-				}
-				break;
-				
-			case 1:
-				if (x12Error != null) {
-					casClaimAdjustment.setClaimAdjustmentReasonCode2(x12Error);
-					casClaimAdjustment.setMonetaryAmount2("0.0");  
-					casClaimAdjustment.setQuantity2(1);
-					++errorNumber;
-				}
-				break;
-				
-			case 2:
-				if (x12Error != null) {
-					casClaimAdjustment.setClaimAdjustmentReasonCode3(x12Error);
-					casClaimAdjustment.setMonetaryAmount3("0.0"); 
-					casClaimAdjustment.setQuantity3(1);
-					++errorNumber;
-				}
-				break;
-				
-			case 3:
-				if (x12Error != null) {
-					casClaimAdjustment.setClaimAdjustmentReasonCode4(x12Error);
-					casClaimAdjustment.setMonetaryAmount4("0.0"); 
-					casClaimAdjustment.setQuantity4(1);
-					++errorNumber;
-				}
-				break;
-				
-			case 4:
-				if (x12Error != null) {
-					casClaimAdjustment.setClaimAdjustmentReasonCode5(x12Error);
-					casClaimAdjustment.setMonetaryAmount5("0.0"); 
-					casClaimAdjustment.setQuantity5(1);
-					++errorNumber;
-				}
-				break;
-				
-			case 5:
-				if (x12Error != null) {
-					casClaimAdjustment.setClaimAdjustmentReasonCode6(x12Error);
-					casClaimAdjustment.setMonetaryAmount6("0.0"); 
-					casClaimAdjustment.setQuantity6(1);
-					++errorNumber;
-				}
-				break;
-			}
-		}
-		
-		// Add the loop to the final output.
-		++totalNumberOfSegments;
-		ArrayList<solutions.health.X12HCCProfessional.X12_835.Loop2100ClaimPaymentInformation> loop2100ClaimPaymentInformation = new ArrayList<solutions.health.X12HCCProfessional.X12_835.Loop2100ClaimPaymentInformation>();
-		solutions.health.X12HCCProfessional.X12_835.Loop2100ClaimPaymentInformation loop2100 = new solutions.health.X12HCCProfessional.X12_835.Loop2100ClaimPaymentInformation();			
-		loop2100.setClaimPaymentInformation(claimPaymentInfo);
-		
-		++totalNumberOfSegments;
-		ArrayList<solutions.health.X12HCCProfessional.X12_835.ClaimAdjustment> claimAdjustmentInformation = new ArrayList<>();
-		claimAdjustmentInformation.add(casClaimAdjustment);
-		
-				
-		loop2100.setClaimAdjustment(claimAdjustmentInformation);
-		loop2100ClaimPaymentInformation.add(loop2100);
-		
-		loop2000Detail.setLoop2100ClaimPaymentInformation(loop2100ClaimPaymentInformation);
-
-		// NM1*QC Segment - Patient Name
-		solutions.health.X12HCCProfessional.X12_835.PatientName patientName = new solutions.health.X12HCCProfessional.X12_835.PatientName();
-		patientName.setEntityIDCode("QC");// Implementation Guide QC==>Patient Name
-		patientName.setEntityTypeQualifier("1"); // Implementation Guide 1==>Person
-		patientName.setLastName(rejectedClaimPayerPayeeBillingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2010BASubscriberName().getPatientName().getLastName());
-		patientName.setFirstName(rejectedClaimPayerPayeeBillingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2010BASubscriberName().getPatientName().getFirstName());
-		patientName.setMiddleName(rejectedClaimPayerPayeeBillingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2010BASubscriberName().getPatientName().getMiddleName());
-		patientName.setIdCodeQualifier(rejectedClaimPayerPayeeBillingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2010BASubscriberName().getPatientName().getIdCodeQualifier()); 
-		currentMemberNumber = rejectedClaimPayerPayeeBillingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2010BASubscriberName().getPatientName().getIdCode();
-		patientName.setIdCode(currentMemberNumber);
-		
-		// Add to final output.
-		++totalNumberOfSegments;		
-		loop2100.setPatientName(patientName);
-
-		
-		// *****MONDAY***** - Here is the same for the Rejected claims - Loop through ALL rejected Encounters
-		int rejectedHeaderNumberCounter = 1; // When moving to combined accepted/rejected this will already be there, do not replicate, reuse existing 
-		transactionSet.setLoop2000Detail(new ArrayList<solutions.health.X12HCCProfessional.X12_835.Loop2000Detail>()); // When moving to combined accepted/rejected this will already be there, do not replicate
-		
+		// *****MONDAY***** - Here is the same for the Rejected claims - Loop through ALL rejected Encounters	
 		for (String rejectedClaim : rejectedClaims.keySet()) {
 			// Here is the actual CLAIM  -  CLP	 and SVC segment information
 			Loop2000ABillingProviderDetail rejectedClaimBillingDetail = original837Detail.get(rejectedClaim);
 			if (rejectedClaimBillingDetail == null) {
 				continue; // Sometimes the original 837 does not contain all 837 details, move on.
 			}
+		
+			// LX segment (header)
+			solutions.health.X12HCCProfessional.X12_835.HeaderNumber headerNumber = new solutions.health.X12HCCProfessional.X12_835.HeaderNumber();
+			headerNumber.setAssignedNumber(1);
+			
+			++totalNumberOfSegments;
+			loop2000Detail.setHeaderNumber(new ArrayList<>());
+			loop2000Detail.getHeaderNumber().add(headerNumber);
+			
+			
+			transactionSet.setLoop2000Detail(new ArrayList<solutions.health.X12HCCProfessional.X12_835.Loop2000Detail>());
+			transactionSet.getLoop2000Detail().add(loop2000Detail);		
+			
+			// CLP SEGMENT
+			// The actual Claim information (Claim Payment)
+			solutions.health.X12HCCProfessional.X12_835.ClaimPaymentInformation claimPaymentInfo = new solutions.health.X12HCCProfessional.X12_835.ClaimPaymentInformation();
+			
+			// This is the ***NEXTGEN Counter ID***		
+			nextGenEncounterID = rejectedClaimPayerPayeeBillingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2000CPatientHierarchicalLevel().get(0).getLoop2300ClaimInformation().get(0).getClaimInformation().getClaimSubmitterIdentifier();
+			claimPaymentInfo.setClaimSubmitIdentifierWithFacility(nextGenEncounterID);
+			claimPaymentInfo.setClaimStatusCode("1");
+			
+			// HERE IS WHERE the BRP and CLP segment need to sum up according 
+			// to the balancing rules of the 835 Implementation Guide.
+			String claimPaymentAmountStr = rejectedClaimPayerPayeeBillingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2000CPatientHierarchicalLevel().get(0).getLoop2300ClaimInformation().get(0).getClaimInformation().getMonetaryAmount();
+			Double claimPaymentAmount = Double.parseDouble(claimPaymentAmountStr);
+			totalPaymentForThis835 += 0;
+			bpr.setMonetaryAmount(Double.toString(totalPaymentForThis835));
+			claimPaymentInfo.setMonetaryAmount(Double.toString(claimPaymentAmount));	// SUBMITTED CHARGES --> CLP03	== Amount4 == 0 ALL ADJUSTMENTS ARE SERVICE LINE LEVEL
+			claimPaymentInfo.setMonetaryAmount2(Double.toString(0));  // AMOUNT PAID == 0 -->  How will this affect balancing?  Amount5 = SUM(CAS Monetary Amounts)  Amount4 - Amount == CLP04
+			claimPaymentInfo.setMonetaryAmount3(Double.toString(0)); //   SO SUM(CAS Monetary Amount) == CLP03(claimPaymentAmount)
+			
+			//claimPaymentInfo.setMonetaryAmount3(Double.toString(0)); // PATIENT RESPOSIBILITY
+			claimPaymentInfo.setClaimFileIndicatorCode("MC"); // According to Implementation guide MC==Medicaid
+			claimPaymentInfo.setReferenceIdentification("1");
+			claimPaymentInfo.setFacilityCode("53");
+			
+			// CAS Segment
+			solutions.health.X12HCCProfessional.X12_835.ClaimAdjustment casClaimAdjustment = new solutions.health.X12HCCProfessional.X12_835.ClaimAdjustment();
+			casClaimAdjustment.setClaimAdjustmentGroupCode("CO"); // Per TERRI - all adjustments are CO
+			                                                      // Per Implementation GuidE CO==>Contractual Oblications
+			// Add EACH error found in the error file
+			// NOTE - ALL MONETARY ADJUSTMENTS ARE SERVICE LEVEL ADJUSTMENTS
+			// NOTE - The CAS segment may need to be broken into multiple 
+			//        segments if there are more than 6 errors found per claim.
+			int errorNumber = 0;
+			for (ErrorLineItem eli : errorsForEncounter) {
+				String x12Error = beaconToX12ErrorMap.get(eli.getErrorNum());
+				//System.out.println("CLP LEVEL REJECT PROCESSING ERROR: "+eli.getErrorNum()+" Maps to X12: "+x12Error);
+				switch (errorNumber) {
+				case 0:			
+					if (x12Error != null) {
+						casClaimAdjustment.setClaimAdjustmentReasonCode(x12Error);
+						casClaimAdjustment.setMonetaryAmount("0.0");                     
+						casClaimAdjustment.setQuantity(1);
+						++errorNumber;
+					}
+					break;
+					
+				case 1:
+					if (x12Error != null) {
+						casClaimAdjustment.setClaimAdjustmentReasonCode2(x12Error);
+						casClaimAdjustment.setMonetaryAmount2("0.0");  
+						casClaimAdjustment.setQuantity2(1);
+						++errorNumber;
+					}
+					break;
+					
+				case 2:
+					if (x12Error != null) {
+						casClaimAdjustment.setClaimAdjustmentReasonCode3(x12Error);
+						casClaimAdjustment.setMonetaryAmount3("0.0"); 
+						casClaimAdjustment.setQuantity3(1);
+						++errorNumber;
+					}
+					break;
+					
+				case 3:
+					if (x12Error != null) {
+						casClaimAdjustment.setClaimAdjustmentReasonCode4(x12Error);
+						casClaimAdjustment.setMonetaryAmount4("0.0"); 
+						casClaimAdjustment.setQuantity4(1);
+						++errorNumber;
+					}
+					break;
+					
+				case 4:
+					if (x12Error != null) {
+						casClaimAdjustment.setClaimAdjustmentReasonCode5(x12Error);
+						casClaimAdjustment.setMonetaryAmount5("0.0"); 
+						casClaimAdjustment.setQuantity5(1);
+						++errorNumber;
+					}
+					break;
+					
+				case 5:
+					if (x12Error != null) {
+						casClaimAdjustment.setClaimAdjustmentReasonCode6(x12Error);
+						casClaimAdjustment.setMonetaryAmount6("0.0"); 
+						casClaimAdjustment.setQuantity6(1);
+						++errorNumber;
+					}
+					break;
+				}
+			}
+			
+			// Add the loop to the final output.
+			++totalNumberOfSegments;
+			ArrayList<solutions.health.X12HCCProfessional.X12_835.Loop2100ClaimPaymentInformation> loop2100ClaimPaymentInformation = new ArrayList<solutions.health.X12HCCProfessional.X12_835.Loop2100ClaimPaymentInformation>();
+			solutions.health.X12HCCProfessional.X12_835.Loop2100ClaimPaymentInformation loop2100 = new solutions.health.X12HCCProfessional.X12_835.Loop2100ClaimPaymentInformation();			
+			loop2100.setClaimPaymentInformation(claimPaymentInfo);
+			
+			++totalNumberOfSegments;
+			ArrayList<solutions.health.X12HCCProfessional.X12_835.ClaimAdjustment> claimAdjustmentInformation = new ArrayList<>();
+			claimAdjustmentInformation.add(casClaimAdjustment);
+			
+					
+			loop2100.setClaimAdjustment(claimAdjustmentInformation);
+			loop2100ClaimPaymentInformation.add(loop2100);
+			
+			loop2000Detail.setLoop2100ClaimPaymentInformation(loop2100ClaimPaymentInformation);
+	
+			// NM1*QC Segment - Patient Name
+			solutions.health.X12HCCProfessional.X12_835.PatientName patientName = new solutions.health.X12HCCProfessional.X12_835.PatientName();
+			patientName.setEntityIDCode("QC");// Implementation Guide QC==>Patient Name
+			patientName.setEntityTypeQualifier("1"); // Implementation Guide 1==>Person
+			patientName.setLastName(rejectedClaimPayerPayeeBillingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2010BASubscriberName().getPatientName().getLastName());
+			patientName.setFirstName(rejectedClaimPayerPayeeBillingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2010BASubscriberName().getPatientName().getFirstName());
+			patientName.setMiddleName(rejectedClaimPayerPayeeBillingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2010BASubscriberName().getPatientName().getMiddleName());
+			patientName.setIdCodeQualifier(rejectedClaimPayerPayeeBillingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2010BASubscriberName().getPatientName().getIdCodeQualifier()); 
+			currentMemberNumber = rejectedClaimPayerPayeeBillingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2010BASubscriberName().getPatientName().getIdCode();
+			patientName.setIdCode(currentMemberNumber);
+			
+			// Add to final output.
+			++totalNumberOfSegments;		
+			loop2100.setPatientName(patientName);
+	
+			int rejectedHeaderNumberCounter = 1; // When moving to combined accepted/rejected this will already be there, do not replicate, reuse existing 
+			transactionSet.setLoop2000Detail(new ArrayList<solutions.health.X12HCCProfessional.X12_835.Loop2000Detail>()); // When moving to combined accepted/rejected this will already be there, do not replicate
 			
 			// This is the SVC Segment 
 			solutions.health.X12HCCProfessional.X12_835.ClaimSPI claimSPI = new solutions.health.X12HCCProfessional.X12_835.ClaimSPI();

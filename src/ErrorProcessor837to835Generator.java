@@ -533,7 +533,10 @@ public class ErrorProcessor837to835Generator {
 			loop2110SPI.setServiceDate(new ArrayList<>());
 			++totalNumberOfSegments;
 			loop2110SPI.getServiceDate().add(serviceDate);
-		}
+		} // END FOR LOOP
+		
+		// HERE IS WHERE YOU WOULD PUT IN THE REJECTED CLAIMS
+		
 		//SE Segment
 		solutions.health.X12HCCProfessional.X12_835.TransactionSetTrailer se = new solutions.health.X12HCCProfessional.X12_835.TransactionSetTrailer();
 		se.setNumberOfIncludedSegments(0); // calculated later, use placeholder here
@@ -864,8 +867,9 @@ public class ErrorProcessor837to835Generator {
 
 		
 		// *****MONDAY***** - Here is the same for the Rejected claims - Loop through ALL rejected Encounters
-		int headerNumberCounter = 1;
-		transactionSet.setLoop2000Detail(new ArrayList<solutions.health.X12HCCProfessional.X12_835.Loop2000Detail>());
+		int rejectedHeaderNumberCounter = 1; // When moving to combined accepted/rejected this will already be there, do not replicate, reuse existing 
+		transactionSet.setLoop2000Detail(new ArrayList<solutions.health.X12HCCProfessional.X12_835.Loop2000Detail>()); // When moving to combined accepted/rejected this will already be there, do not replicate
+		
 		for (String rejectedClaim : rejectedClaims.keySet()) {
 			// Here is the actual CLAIM  -  CLP	 and SVC segment information
 			Loop2000ABillingProviderDetail rejectedClaimBillingDetail = original837Detail.get(rejectedClaim);
@@ -878,7 +882,7 @@ public class ErrorProcessor837to835Generator {
 			claimSPI.setCompositeMPI(rejectedClaimBillingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2000CPatientHierarchicalLevel().get(0).getLoop2300ClaimInformation().get(0).getLoop2400ServiceLineNumber().get(0).getProfessionalService().getCompMedProcedID());
 			claimSPI.setSubmittedServiceCharge(rejectedClaimBillingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2000CPatientHierarchicalLevel().get(0).getLoop2300ClaimInformation().get(0).getLoop2400ServiceLineNumber().get(0).getProfessionalService().getMonetaryAmount());
 			claimSPI.setAmountPaid(Double.toString(0.0)); // Here is where the amount paid == 0 since this is a DENIED claim.
-		                                              // Here is also where the CLP - CAS segments must equal 0 (amount paid for claim = 0); 
+		                                                  // Here is also where the CLP - CAS segments must equal 0 (amount paid for claim = 0); 
 		
 			// Add the Service Line information (SVC and DTM Segments).
 			solutions.health.X12HCCProfessional.X12_835.Loop2110SPI loop2110SPI = new solutions.health.X12HCCProfessional.X12_835.Loop2110SPI();
@@ -984,7 +988,12 @@ public class ErrorProcessor837to835Generator {
 			loop2110SPI.setServiceDate(new ArrayList<solutions.health.X12HCCProfessional.X12_835.ServiceDate>());
 			++totalNumberOfSegments;
 			loop2110SPI.getServiceDate().add(serviceDate);
-		}	
+		}	// END FOR LOOP
+		
+		
+		
+		
+		
 		//SE Segment
 		solutions.health.X12HCCProfessional.X12_835.TransactionSetTrailer se = new solutions.health.X12HCCProfessional.X12_835.TransactionSetTrailer();
 		se.setNumberOfIncludedSegments(0); // calculated later, use placeholder here

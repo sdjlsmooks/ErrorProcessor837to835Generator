@@ -1166,7 +1166,7 @@ public class ErrorProcessor837to835Generator {
 			System.out.println("Total Number of Accepted Encounters to process: "+allEncounters.keySet().size());
 			
 			// Loop through all accepted encounters
-			// Need at least 1 Beacond Encounter to retrieve the Payer/Payee Identification Information
+			// Need at least 1 valid Beacon Encounter to retrieve the Payer/Payee Identification Information
 			String aValidBeaconEncounterID = null;
 			for (String beaconEncounterID: acceptedClaims.keySet()) {
 				
@@ -1244,12 +1244,12 @@ public class ErrorProcessor837to835Generator {
 			pw.println("\n\tTotal: "+getFullyProcessedAcceptedClaims().size());
 			pw.println("\nRejected Encouters Processed and put into 835");
 			for (String processedRejected : getFullyProcessedRejectedClaims()) {
-				Loop2000ABillingProviderDetail acceptedClaimBillingDetail = original837Detail.get(processedRejected);
-				Loop2000BSubscriberHierarchicalLevel acLoop2000bSubscriberHierarchicalLevel = acceptedClaimBillingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0);				
-				String nextGenEncounterID = acLoop2000bSubscriberHierarchicalLevel.getLoop2000CPatientHierarchicalLevel().get(0).getLoop2300ClaimInformation().get(0).getClaimInformation().getClaimSubmitterIdentifier();
-				Integer nextGenEIDInt = Integer.parseInt(nextGenEncounterID)- 100000000;
+				Loop2000ABillingProviderDetail rejectedClaimBillingDetail = original837Detail.get(processedRejected);
+				Loop2000BSubscriberHierarchicalLevel acLoop2000bSubscriberHierarchicalLevel = rejectedClaimBillingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0);				
+				String rejectedNextGenEncounterID = acLoop2000bSubscriberHierarchicalLevel.getLoop2000CPatientHierarchicalLevel().get(0).getLoop2300ClaimInformation().get(0).getClaimInformation().getClaimSubmitterIdentifier();
+				Integer rejectedNextGenEIDInt = Integer.parseInt(rejectedNextGenEncounterID)- 100000000;
 
-				pw.println("\t\t"+processedRejected+" ("+nextGenEIDInt+")");
+				pw.println("\t\t"+processedRejected+" ("+rejectedNextGenEIDInt+")");
 			}
 			pw.println("\n\tTotal: "+getFullyProcessedRejectedClaims().size());
 			pw.println("\n");

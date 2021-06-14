@@ -1235,12 +1235,21 @@ public class ErrorProcessor837to835Generator {
 			pw.println("*********************** PROCESSED CLAIMS ********************************");
 			pw.println("Accepted Encounters Processed and put into 835");
 			for (String processedAccepted : getFullyProcessedAcceptedClaims()) {
-				pw.println("\t\t"+processedAccepted);
+				Loop2000ABillingProviderDetail acceptedClaimBillingDetail = original837Detail.get(processedAccepted);
+				Loop2000BSubscriberHierarchicalLevel acLoop2000bSubscriberHierarchicalLevel = acceptedClaimBillingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0);				
+				String nextGenEncounterID = acLoop2000bSubscriberHierarchicalLevel.getLoop2000CPatientHierarchicalLevel().get(0).getLoop2300ClaimInformation().get(0).getClaimInformation().getClaimSubmitterIdentifier();
+				Integer nextGenEIDInt = Integer.parseInt(nextGenEncounterID)- 100000000;
+				pw.println("\t\t"+processedAccepted+" ("+nextGenEIDInt+")");
 			}
 			pw.println("\n\tTotal: "+getFullyProcessedAcceptedClaims().size());
 			pw.println("\nRejected Encouters Processed and put into 835");
 			for (String processedRejected : getFullyProcessedRejectedClaims()) {
-				pw.println("\t\t"+processedRejected);
+				Loop2000ABillingProviderDetail acceptedClaimBillingDetail = original837Detail.get(processedRejected);
+				Loop2000BSubscriberHierarchicalLevel acLoop2000bSubscriberHierarchicalLevel = acceptedClaimBillingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0);				
+				String nextGenEncounterID = acLoop2000bSubscriberHierarchicalLevel.getLoop2000CPatientHierarchicalLevel().get(0).getLoop2300ClaimInformation().get(0).getClaimInformation().getClaimSubmitterIdentifier();
+				Integer nextGenEIDInt = Integer.parseInt(nextGenEncounterID)- 100000000;
+
+				pw.println("\t\t"+processedRejected+" ("+nextGenEIDInt+")");
 			}
 			pw.println("\n\tTotal: "+getFullyProcessedRejectedClaims().size());
 			pw.println("\n");
@@ -1249,7 +1258,6 @@ public class ErrorProcessor837to835Generator {
 			pw.close();
 			fw.close();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}

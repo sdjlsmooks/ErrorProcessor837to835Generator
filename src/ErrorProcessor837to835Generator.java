@@ -2,18 +2,20 @@
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList; 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.xml.sax.SAXException;
-import org.apache.commons.math3.util.Precision;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.math3.util.Precision;
+import org.xml.sax.SAXException;
 
 import solutions.health.X12HCCProfessional.X12_835.X12835;
 import solutions.health.X12HCCProfessional.X12_835.X12835Factory;
@@ -77,6 +79,17 @@ public class ErrorProcessor837to835Generator {
 	private HashMap<String, ProcessedClaim> acceptedClaims = new HashMap<>();
 	
 	/**
+	 * For Report on Claims Processed
+	 */
+	private Set<String> fullyProcessedAcceptedClaims = new HashSet<>();
+
+	/**
+	 * For Report on Claims Processed
+	 */
+	private Set<String> fullyProcessedRejectedClaims = new HashSet<>();
+
+
+	/**
 	 * Maps Beacon Error Codes to X12 Error Codes
 	 * Used in creation of the denial 835s (send in the X12 equivalent of the
 	 * Beacon error code.  Used for generating DENIAL 835s 
@@ -106,6 +119,24 @@ public class ErrorProcessor837to835Generator {
 	
 	// Helper to generate filenames in a more user-friendly way.
 	String nextGenEncounterID = null;
+
+	
+	// Auto-Generated Getters/Setters.
+	public Set<String> getFullyProcessedAcceptedClaims() {
+		return fullyProcessedAcceptedClaims;
+	}
+
+	public void setFullyProcessedAcceptedClaims(Set<String> fullyProcessedAcceptedClaims) {
+		this.fullyProcessedAcceptedClaims = fullyProcessedAcceptedClaims;
+	}
+
+	public Set<String> getFullyProcessedRejectedClaims() {
+		return fullyProcessedRejectedClaims;
+	}
+
+	public void setFullyProcessedRejectedClaims(Set<String> fullyProcessedRejectedClaims) {
+		this.fullyProcessedRejectedClaims = fullyProcessedRejectedClaims;
+	}
 	
 	public String getOriginal837FileName() {
 		return original837FileName;
@@ -532,6 +563,7 @@ public class ErrorProcessor837to835Generator {
 			loop2110SPI.setServiceDate(new ArrayList<>());
 			++totalNumberOfSegments;
 			loop2110SPI.getServiceDate().add(serviceDate);
+			fullyProcessedAcceptedClaims.add(acceptedClaim);
 		} // END FOR LOOP
 		
 		// HERE IS WHERE YOU WOULD PUT IN THE REJECTED CLAIMS
@@ -986,6 +1018,7 @@ public class ErrorProcessor837to835Generator {
 			loop2110SPI.setServiceDate(new ArrayList<solutions.health.X12HCCProfessional.X12_835.ServiceDate>());
 			++totalNumberOfSegments;
 			loop2110SPI.getServiceDate().add(serviceDate);
+			fullyProcessedRejectedClaims.add(rejectedClaim);
 		}	// END FOR LOOP
 		
 		
@@ -1168,9 +1201,6 @@ public class ErrorProcessor837to835Generator {
 				
 				System.out.println(acceptedX12835Str);
 				
-				
-				Integer nextGenEncounterIDInt = Integer.parseInt(nextGenEncounterID);
-				nextGenEncounterIDInt -= 100000000; // NextGen Encounter ID trimmed (take > 99999 into account)
 				String baseName = FilenameUtils.getBaseName(encounterFileName);
 				String acceptedFilename = output835Directory+"\\accepted\\Output835_"+baseName+"_accepted.x12";				
 				System.out.println("Writing to file: '"+acceptedFilename+"'");
@@ -1193,6 +1223,35 @@ public class ErrorProcessor837to835Generator {
 			pe.printStackTrace();			
 		}
 		
+	}
+
+	private void generateOutputReport() {
+		
+		try {
+			String baseName = FilenameUtils.getBaseName(encounterFileName);
+			String outputFilename = output835Directory+"/OutputReport_"+baseName+".txt";
+			FileWriter fw = new FileWriter(outputFilename);
+			PrintWriter pw = new PrintWriter(fw);
+			pw.println("*********************** PROCESSED CLAIMS ********************************");
+			pw.println("Accepted Encounters Processed and put into 835");
+			for (String processedAccepted : getFullyProcessedAcceptedClaims()) {
+				pw.println("\t\t"+processedAccepted);
+			}
+			pw.println("\n\tTotal: "+getFullyProcessedAcceptedClaims().size());
+			pw.println("\nRejected Encouters Processed and put into 835");
+			for (String processedRejected : getFullyProcessedRejectedClaims()) {
+				pw.println("\t\t"+processedRejected);
+			}
+			pw.println("\n\tTotal: "+getFullyProcessedRejectedClaims().size());
+			pw.println("\n");
+			pw.println("GRAND TOTAL: "+(getFullyProcessedAcceptedClaims().size()+getFullyProcessedRejectedClaims().size()));
+			pw.println("*********************** END PROCESSED CLAIMS ********************************");
+			pw.close();
+			fw.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	/**
@@ -1219,6 +1278,9 @@ public class ErrorProcessor837to835Generator {
 		
 		processor.generateAcceptedRecords835();
 		processor.generatedRejectedRecords835();
+		processor.generateOutputReport();
+
 		System.exit(0);
+		
 	}
 }

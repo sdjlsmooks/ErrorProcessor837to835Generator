@@ -38,6 +38,9 @@ public class ErrorProcessor837to835Generator {
 	private String output835Directory = "";
 
 	
+	
+	
+	
 	/**
 	 * Contents of the 837 - Entries - (BeaconEncounterID, Loop2000ABillingProviderDetail) 
 	 */
@@ -47,8 +50,8 @@ public class ErrorProcessor837to835Generator {
 
 	/**
 	 * Map - entries   (BeaconEncounterID, EncounterLineItem)
-	 */
-	private HashMap<String, EncounterLineItem> allEncounters = new HashMap<>();
+	 */	
+	private HashMap<String, EncounterLineItem> encFileEncouters = new HashMap<>();
 	
 	/**
 	 * The contents of the ENC_err.txt file - used in creation of DENIAL 835s
@@ -88,6 +91,17 @@ public class ErrorProcessor837to835Generator {
 	 */
 	private Set<String> fullyProcessedRejectedClaims = new HashSet<>();
 
+	/**
+	 * For report on unprocessed claims
+	 */
+	private Set<String> unprocessedNoX12Mapping = new HashSet<>();
+
+	/**
+	 * For report on unprocessed claims
+	 */
+	private Set<String> unprocessedInsufficientInformation = new HashSet<>();
+
+	
 
 	/**
 	 * Maps Beacon Error Codes to X12 Error Codes
@@ -121,7 +135,6 @@ public class ErrorProcessor837to835Generator {
 	String nextGenEncounterID = null;
 
 	
-	// Auto-Generated Getters/Setters.
 	public Set<String> getFullyProcessedAcceptedClaims() {
 		return fullyProcessedAcceptedClaims;
 	}
@@ -184,7 +197,7 @@ public class ErrorProcessor837to835Generator {
 	 * @return The encounter with that encounter number or NULL if not found.
 	 */
 	public EncounterLineItem getEncounterNumber(int encounterNum) {
-		for (EncounterLineItem e: allEncounters.values()) {
+		for (EncounterLineItem e: encFileEncouters.values()) {
 			if (e.getRecordNumber() == encounterNum) {
 				return e;
 			}
@@ -229,11 +242,15 @@ public class ErrorProcessor837to835Generator {
 	public void readInOriginal837Information() {
 		Original837DAO the837DAO = new Original837DAO(original837FileName);
 		original837Detail = the837DAO.getOriginal837Detail();
+		for (String original837DetailEncounter: original837Detail.keySet()) {
+			System.out.println("Original 837 Detail Beacon Encounter Number: '"+original837DetailEncounter+"'");
+		}
+		System.out.println("Original 837 Detail keySet.size() = "+original837Detail.keySet().size());
 	}
 
 	public void readInEncounterFile() {
 		EncounterLineItemDAO eliDAO = new EncounterLineItemDAO(encounterFileName);
-		allEncounters = eliDAO.getAcceptedEncounterMap();
+		encFileEncouters = eliDAO.getAcceptedEncounterMap();
 	}
 
 	
@@ -261,7 +278,7 @@ public class ErrorProcessor837to835Generator {
 	 */
 	private EncounterLineItem getClaimForRecordNumber(int recordNum) {
 		EncounterLineItem retVal = null;
-		for (EncounterLineItem eli : allEncounters.values()) {
+		for (EncounterLineItem eli : encFileEncouters.values()) {
 			if (eli.getRecordNumber() == recordNum) {
 				retVal = eli;
 				break;
@@ -292,8 +309,10 @@ public class ErrorProcessor837to835Generator {
 	public void findProcessedClaims() {
 		ProcessedClaimsDAO pcDAO = new ProcessedClaimsDAO();
 		acceptedClaims = pcDAO.getAcceptedClaims(encounterFileName);
+		System.out.println("DB - Accepted Claims Size: "+acceptedClaims.size());
 		rejectedClaims = pcDAO.getRejectedClaims(encounterFileName);
-		System.out.println("Found Processed Claims: Accepted = "+acceptedClaims.size()+" Rejected = "+rejectedClaims.size());
+		System.out.println("DB - Rejected Claims Size: "+rejectedClaims.size());
+		System.out.println("DB - Found Processed Claims: Accepted = "+acceptedClaims.size()+" Rejected = "+rejectedClaims.size());
 	}
 	
 	
@@ -470,12 +489,20 @@ public class ErrorProcessor837to835Generator {
 		// *****MONDAY***** - HERE IS WHERE YOU NEED TO LOOP THROUGH ALL ORIGINAL 837 Loop 2000 Detail informations
 		int headerNumberCounter = 1;
 		transactionSet.setLoop2000Detail(new ArrayList<solutions.health.X12HCCProfessional.X12_835.Loop2000Detail>());
+		System.out.println("Generate Accepted: keySet.size() = "+acceptedClaims.keySet().size());
 		for (String acceptedClaim : acceptedClaims.keySet()) {
 			// Here is the actual CLAIM  -  CLP	 and SVC segment information
+			
 			Loop2000ABillingProviderDetail acceptedClaimBillingDetail = original837Detail.get(acceptedClaim);
 			if (acceptedClaimBillingDetail == null) {
+				System.out.println("NO DETAIL FOR ACCEPTED: "+acceptedClaim+" moving on");
+				unprocessedInsufficientInformation.add(acceptedClaim);
 				continue; // No detail for the accepted claim, move on.
 			}
+			else {
+				System.out.println("Processing Accepted Encounter ID: '"+acceptedClaim+"'");
+			}
+			
 			Loop2000BSubscriberHierarchicalLevel acLoop2000bSubscriberHierarchicalLevel = acceptedClaimBillingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0);
 			solutions.health.X12HCCProfessional.X12_835.Loop2000Detail loop2000Detail = new solutions.health.X12HCCProfessional.X12_835.Loop2000Detail();
 			transactionSet.getLoop2000Detail().add(loop2000Detail);		
@@ -757,17 +784,23 @@ public class ErrorProcessor837to835Generator {
 		transactionSet.setLoop1000BPayeeIdentification(loop1000BPayeeIdentification);
 
 		
+		
+		// *****MONDAY***** - Here is the same for the Rejected claims - Loop through ALL rejected Encounters
+		System.out.println("GenerateRejected: keySet.size() = "+rejectedClaims.keySet().size());
 		// Here is the actual CLAIM  -  CLP	 and SVC segment information
 		solutions.health.X12HCCProfessional.X12_835.Loop2000Detail loop2000Detail = new solutions.health.X12HCCProfessional.X12_835.Loop2000Detail();
-		
-		// *****MONDAY***** - Here is the same for the Rejected claims - Loop through ALL rejected Encounters	
+		transactionSet.setLoop2000Detail(new ArrayList<solutions.health.X12HCCProfessional.X12_835.Loop2000Detail>());
 		for (String rejectedClaim : rejectedClaims.keySet()) {
-			// Here is the actual CLAIM  -  CLP	 and SVC segment information
-			Loop2000ABillingProviderDetail rejectedClaimBillingDetail = original837Detail.get(rejectedClaim);
+			Loop2000ABillingProviderDetail rejectedClaimBillingDetail = original837Detail.get(rejectedClaim);			
 			if (rejectedClaimBillingDetail == null) {
+				System.out.println("NO DETAIL FOR REJECTED: "+rejectedClaim+" moving on");
+				unprocessedInsufficientInformation.add(rejectedClaim);
 				continue; // Sometimes the original 837 does not contain all 837 details, move on.
 			}
-		
+			else {
+				System.out.println("Processing Reject Encounter ID: '"+rejectedClaim+"'");
+			}
+			
 			// LX segment (header)
 			solutions.health.X12HCCProfessional.X12_835.HeaderNumber headerNumber = new solutions.health.X12HCCProfessional.X12_835.HeaderNumber();
 			headerNumber.setAssignedNumber(1);
@@ -775,10 +808,6 @@ public class ErrorProcessor837to835Generator {
 			++totalNumberOfSegments;
 			loop2000Detail.setHeaderNumber(new ArrayList<>());
 			loop2000Detail.getHeaderNumber().add(headerNumber);
-			
-			
-			transactionSet.setLoop2000Detail(new ArrayList<solutions.health.X12HCCProfessional.X12_835.Loop2000Detail>());
-			transactionSet.getLoop2000Detail().add(loop2000Detail);		
 			
 			// CLP SEGMENT
 			// The actual Claim information (Claim Payment)
@@ -814,8 +843,14 @@ public class ErrorProcessor837to835Generator {
 			//        segments if there are more than 6 errors found per claim.
 			int errorNumber = 0;
 			for (ErrorLineItem eli : errorsForEncounter) {
-				String x12Error = beaconToX12ErrorMap.get(eli.getErrorNum());
-				//System.out.println("CLP LEVEL REJECT PROCESSING ERROR: "+eli.getErrorNum()+" Maps to X12: "+x12Error);
+				String errorNum = eli.getErrorNum();
+				System.out.println("Beacon Error Number: '"+errorNum+"'");
+				String x12Error = beaconToX12ErrorMap.get(errorNum);
+				if (x12Error == null) {
+					System.out.println("CLP LEVEL: No X12 Mapping for: " +errorNum);
+					continue; // There is not X12 Error Code to map to, move on.
+				}
+				System.out.println("CLP LEVEL REJECT PROCESSING ERROR: "+errorNum+" Maps to X12: "+x12Error);
 				switch (errorNumber) {
 				case 0:			
 					if (x12Error != null) {
@@ -879,14 +914,20 @@ public class ErrorProcessor837to835Generator {
 			solutions.health.X12HCCProfessional.X12_835.Loop2100ClaimPaymentInformation loop2100 = new solutions.health.X12HCCProfessional.X12_835.Loop2100ClaimPaymentInformation();			
 			loop2100.setClaimPaymentInformation(claimPaymentInfo);
 			
-			++totalNumberOfSegments;
-			ArrayList<solutions.health.X12HCCProfessional.X12_835.ClaimAdjustment> claimAdjustmentInformation = new ArrayList<>();
-			claimAdjustmentInformation.add(casClaimAdjustment);
-			
-					
-			loop2100.setClaimAdjustment(claimAdjustmentInformation);
-			loop2100ClaimPaymentInformation.add(loop2100);
-			
+			if (errorNumber > 0) { // If there are no X12 errors to add, skip over
+				++totalNumberOfSegments;
+				ArrayList<solutions.health.X12HCCProfessional.X12_835.ClaimAdjustment> claimAdjustmentInformation = new ArrayList<>();
+				claimAdjustmentInformation.add(casClaimAdjustment);
+				loop2100.setClaimAdjustment(claimAdjustmentInformation);
+			}
+			else {
+				// NO X12 Error Number
+				System.out.println("No X12 Error Codes map to error For: "+rejectedClaim+", CAS segment requies at least 1, moving on");
+				transactionSet.getLoop2000Detail().remove(loop2000Detail);
+				totalNumberOfSegments -= 2;
+				continue;
+			}
+			loop2100ClaimPaymentInformation.add(loop2100);			
 			loop2000Detail.setLoop2100ClaimPaymentInformation(loop2100ClaimPaymentInformation);
 	
 			// NM1*QC Segment - Patient Name
@@ -905,7 +946,6 @@ public class ErrorProcessor837to835Generator {
 			loop2100.setPatientName(patientName);
 	
 			int rejectedHeaderNumberCounter = 1; // When moving to combined accepted/rejected this will already be there, do not replicate, reuse existing 
-			transactionSet.setLoop2000Detail(new ArrayList<solutions.health.X12HCCProfessional.X12_835.Loop2000Detail>()); // When moving to combined accepted/rejected this will already be there, do not replicate
 			
 			// This is the SVC Segment 
 			solutions.health.X12HCCProfessional.X12_835.ClaimSPI claimSPI = new solutions.health.X12HCCProfessional.X12_835.ClaimSPI();
@@ -936,9 +976,15 @@ public class ErrorProcessor837to835Generator {
 			//        segments if there are more than 6 errors found per claim.
 			int serviceErrorNumber = 0;
 			for (ErrorLineItem eli : errorsForEncounter) {
-			String x12Error = beaconToX12ErrorMap.get(eli.getErrorNum());
-			//System.out.println("SVC LEVEL REJECT PROCESSING ERROR: "+eli.getErrorNum()+" Maps to X12: "+x12Error);
-			switch (serviceErrorNumber) {
+				String x12Error = beaconToX12ErrorMap.get(eli.getErrorNum());
+				if (x12Error == null) {
+					System.out.println("SVC Level No X12 Mapping for: " +x12Error);
+					continue;
+				}
+				//System.out.println("SVC LEVEL REJECT PROCESSING ERROR: "+eli.getErrorNum()+" Maps to X12: "+x12Error);
+				System.out.println("Rejected Service Error Number: "+serviceErrorNumber);
+	
+				switch (serviceErrorNumber) {
 				case 0:			
 					if (x12Error != null) {
 						casServiceAdjustment.setServiceARCode(x12Error);
@@ -1002,10 +1048,15 @@ public class ErrorProcessor837to835Generator {
 				}
 			}
 	
-			++totalNumberOfSegments;
-			ArrayList<solutions.health.X12HCCProfessional.X12_835.ServiceAdjustment> serviceAdjustmentInformation = new ArrayList<>();		
-			serviceAdjustmentInformation.add(casServiceAdjustment);
-			loop2110SPI.setServiceAdjustment(serviceAdjustmentInformation);
+			if (serviceErrorNumber > 0) { // If there are no X12 errors, nothing to add, move on
+				++totalNumberOfSegments;
+				ArrayList<solutions.health.X12HCCProfessional.X12_835.ServiceAdjustment> serviceAdjustmentInformation = new ArrayList<>();		
+				serviceAdjustmentInformation.add(casServiceAdjustment);
+				loop2110SPI.setServiceAdjustment(serviceAdjustmentInformation);				
+			}
+			else {
+				System.out.println("No X12 Service Error Codes map to error For: "+rejectedClaim+", CAS segment requies at least 1, moving on");
+			}
 			
 			// This is the DTM*472 segment
 			solutions.health.X12HCCProfessional.X12_835.ServiceDate serviceDate = new solutions.health.X12HCCProfessional.X12_835.ServiceDate();
@@ -1018,7 +1069,7 @@ public class ErrorProcessor837to835Generator {
 			loop2110SPI.setServiceDate(new ArrayList<solutions.health.X12HCCProfessional.X12_835.ServiceDate>());
 			++totalNumberOfSegments;
 			loop2110SPI.getServiceDate().add(serviceDate);
-			fullyProcessedRejectedClaims.add(rejectedClaim);
+			fullyProcessedRejectedClaims.add(rejectedClaim);			
 		}	// END FOR LOOP
 		
 		
@@ -1088,7 +1139,7 @@ public class ErrorProcessor837to835Generator {
 			File rejectedPath = new File(output835Directory+"\\rejected");
 			org.apache.commons.io.FileUtils.forceMkdir(rejectedPath);
 			
-			System.out.println("Total Number of Rejected Encounters to process: "+allEncounters.keySet().size());
+			System.out.println("Total Number of Rejected Encounters to process: "+encFileEncouters.keySet().size());
 			
 			
 			// Need at least 1 valid rejected Beacon Encounter ID to retrieve Payer/Payee Identification Information
@@ -1163,7 +1214,7 @@ public class ErrorProcessor837to835Generator {
 			File acceptedPath = new File(output835Directory+"\\accepted");
 			org.apache.commons.io.FileUtils.forceMkdir(acceptedPath);
 			
-			System.out.println("Total Number of Accepted Encounters to process: "+allEncounters.keySet().size());
+			System.out.println("Total Number of Accepted Encounters to process: "+encFileEncouters.keySet().size());
 			
 			// Loop through all accepted encounters
 			// Need at least 1 valid Beacon Encounter to retrieve the Payer/Payee Identification Information
@@ -1233,6 +1284,8 @@ public class ErrorProcessor837to835Generator {
 			FileWriter fw = new FileWriter(outputFilename);
 			PrintWriter pw = new PrintWriter(fw);
 			pw.println("*********************** PROCESSED CLAIMS ********************************");
+			pw.println("Number Encounters in the ENC File: "+encFileEncouters.size()+"\n");
+
 			pw.println("Accepted Encounters Processed and put into 835");
 			for (String processedAccepted : getFullyProcessedAcceptedClaims()) {
 				Loop2000ABillingProviderDetail acceptedClaimBillingDetail = original837Detail.get(processedAccepted);
@@ -1242,6 +1295,7 @@ public class ErrorProcessor837to835Generator {
 				pw.println("\t\t"+processedAccepted+" ("+nextGenEIDInt+")");
 			}
 			pw.println("\n\tTotal: "+getFullyProcessedAcceptedClaims().size());
+			
 			pw.println("\nRejected Encouters Processed and put into 835");
 			for (String processedRejected : getFullyProcessedRejectedClaims()) {
 				Loop2000ABillingProviderDetail rejectedClaimBillingDetail = original837Detail.get(processedRejected);
@@ -1253,6 +1307,7 @@ public class ErrorProcessor837to835Generator {
 			}
 			pw.println("\n\tTotal: "+getFullyProcessedRejectedClaims().size());
 			pw.println("\n");
+
 			pw.println("GRAND TOTAL: "+(getFullyProcessedAcceptedClaims().size()+getFullyProcessedRejectedClaims().size()));
 			pw.println("*********************** END PROCESSED CLAIMS ********************************");
 			pw.close();
@@ -1261,7 +1316,7 @@ public class ErrorProcessor837to835Generator {
 			e.printStackTrace();
 		}
 	}
-	
+
 	/**
 	 * @param args
 	 */
@@ -1287,7 +1342,7 @@ public class ErrorProcessor837to835Generator {
 		processor.generateAcceptedRecords835();
 		processor.generatedRejectedRecords835();
 		processor.generateOutputReport();
-
+		
 		System.exit(0);
 		
 	}

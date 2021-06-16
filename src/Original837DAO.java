@@ -62,10 +62,8 @@ public class Original837DAO {
 					Loop2000CPatientHierarchicalLevel phl = loop2000B.getLoop2000CPatientHierarchicalLevel().get(0);
 					Loop2300ClaimInformation loop2300ClaimInformation = phl.getLoop2300ClaimInformation().get(0);
 					Loop2400ServiceLineNumber sln = loop2300ClaimInformation.getLoop2400ServiceLineNumber().get(0);
-					System.out
-							.println("Line Item Control Number: " + sln.getLiControlNumber().getReferenceIdentification());
-	
-	
+					System.out.println("Line Item Control Number: " + sln.getLiControlNumber().getReferenceIdentification());
+					
 					// Save Original Source of Truth data for error processing				
 					String serviceLineNumberBeaconEncounterID = loop2000ABillingProviderDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2000CPatientHierarchicalLevel().get(0).getLoop2300ClaimInformation().get(0).getLoop2400ServiceLineNumber().get(0).getLiControlNumber().getReferenceIdentification().toString();
 					original837Detail.put(serviceLineNumberBeaconEncounterID, loop2000ABillingProviderDetail);

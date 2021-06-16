@@ -168,7 +168,7 @@ public class EncounterLineItemDAO {
 					// Sometimes billingProviderNPI is not present
 					lineItem.setBillingProviderNPI("");
 				}
-				System.out.println("Beacon Encounter ID = '" + lineItem.getEncounterID() + "'");
+				System.out.println("ENC FILE Beacon Encounter ID = '" + lineItem.getEncounterID() + "'");
 				encounterList.add(lineItem);
 				acceptedEncounterMap.put(lineItem.getEncounterID(),lineItem);
 			}

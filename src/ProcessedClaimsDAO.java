@@ -63,16 +63,19 @@ public class ProcessedClaimsDAO {
 			PreparedStatement findRejectedStatement = SQLServerConnection.getInstance().getConnection().prepareStatement(findRejectedClaimsSQL);
 			findRejectedStatement.setString(1, baseFilename);
 			boolean rejectedQueryResult = findRejectedStatement.execute();
+			int totalRejections = 0;
 			if (rejectedQueryResult) {
 				ResultSet rejectedRS = findRejectedStatement.getResultSet();
-				while (rejectedRS.next()) {
+				while (rejectedRS.next()) {					
 					String rejectedClaimSubscriberMedicaidID = rejectedRS.getString("Subscriber_Medicaid_ID");
 					String rejectedClaimBeaconEncounterID = rejectedRS.getString("Encounter_ID");
 					
 					ProcessedClaim rejectedClaim = new ProcessedClaim(rejectedClaimSubscriberMedicaidID, rejectedClaimBeaconEncounterID);
-					rejectedClaims.put(rejectedClaimBeaconEncounterID, rejectedClaim);								
+					rejectedClaims.put(rejectedClaimBeaconEncounterID, rejectedClaim);
+					++totalRejections;
 				}
 				rejectedRS.close();
+				System.out.println("DB - Total Rejections: "+totalRejections);
 			}
 		} catch (SQLException sqe) {
 			sqe.printStackTrace();

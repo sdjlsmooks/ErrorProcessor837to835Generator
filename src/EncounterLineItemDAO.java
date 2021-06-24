@@ -61,109 +61,109 @@ public class EncounterLineItemDAO {
 			// Read in each line item
 			int recordNumber=1;
 			while ((line = lnr.readLine()) != null) {
-				String[] individualLineEntries = line.split("\t");
+				String[] fields = line.split("\t");
 				EncounterLineItem lineItem = new EncounterLineItem();
-				System.out.println("Number line Entries = " + individualLineEntries.length);
+				System.out.println("Number Encounter Line Item fields = " + fields.length);
 				lineItem.setRecordNumber(recordNumber);
 				++recordNumber; // increment on its own seperate line to help with debugging
 								// makes an easy breakpoint
-				lineItem.setRecordType(individualLineEntries[0]);
-				lineItem.setSubscriberFirstName(individualLineEntries[1]);
-				lineItem.setSubscriberLastName(individualLineEntries[2]);
-				lineItem.setSubscriberMiddleName(individualLineEntries[3]);
-				lineItem.setSubscriberSuffix(individualLineEntries[4]);
-				lineItem.setSubscriberMedicaidID(individualLineEntries[5]);
-				lineItem.setSubscriberAddress(individualLineEntries[6]);
-				lineItem.setSubscriberCity(individualLineEntries[7]);
-				lineItem.setSubscriberState(individualLineEntries[8]);
-				lineItem.setSubscriberZipCode(individualLineEntries[9]);
-				lineItem.setSubscriberDOB(individualLineEntries[10]);
-				lineItem.setSubscriberGender(individualLineEntries[11]);
-				lineItem.setSubscriberSSN(individualLineEntries[12]);
-				lineItem.setChargedAmount(individualLineEntries[13]);
-				lineItem.setPlaceofService(individualLineEntries[14]);
-				lineItem.setClaimNumber(individualLineEntries[15]);
-				lineItem.setClaimType(individualLineEntries[16]);
-				lineItem.setPrincipalDiagnosis(individualLineEntries[17]);
-				lineItem.setProcedureCode(individualLineEntries[18]);
-				lineItem.setProcedureCodeModifierNum1(individualLineEntries[19]);
-				lineItem.setProcedureCodeModifierNum2(individualLineEntries[20]);
-				lineItem.setProcedureCodeModifierNum3(individualLineEntries[21]);
-				lineItem.setProcedureCodeModifierNum4(individualLineEntries[22]);
-				lineItem.setNumberofUnits(individualLineEntries[23]);
-				lineItem.setDateofService(individualLineEntries[24]);
-				lineItem.setStartTime(individualLineEntries[25]);
-				lineItem.setDuration(individualLineEntries[26]);
-				lineItem.setProviderID(individualLineEntries[27]);
-				lineItem.setProviderFirstName(individualLineEntries[28]);
-				lineItem.setProviderLastName(individualLineEntries[29]);
-				lineItem.setProviderMiddleName(individualLineEntries[30]);
-				lineItem.setProviderSuffix(individualLineEntries[31]);
-				lineItem.setProviderCredentials(individualLineEntries[32]);
-				lineItem.setCoreServiceCode(individualLineEntries[33]);
-				lineItem.setModalityCode(individualLineEntries[34]);
-				lineItem.setProgramCode(individualLineEntries[35]);
-				lineItem.setEmergencyInd(individualLineEntries[36]);
-				lineItem.setEncounterID(individualLineEntries[37]);
-				lineItem.setRevenueCode(individualLineEntries[38]);
-				lineItem.setSpecialStudiesCode1(individualLineEntries[39]);
-				lineItem.setSpecialStudiesCode2(individualLineEntries[40]);
-				lineItem.setNonMedicaidID(individualLineEntries[41]);
-				lineItem.setNonMedicaidPayerSource(individualLineEntries[42]);
-				lineItem.setRenderingProviderNPI(individualLineEntries[43]);
-				lineItem.setSecondDiagnosis(individualLineEntries[44]);
-				lineItem.setNonMedicaidFlag(individualLineEntries[45]);
-				lineItem.setOverrideFlag(individualLineEntries[46]);
-				lineItem.setCcarOnFile(individualLineEntries[47]);
-				lineItem.setSubmitterDefined(individualLineEntries[48]);
+				lineItem.setRecordType(fields[0]);
+				lineItem.setSubscriberFirstName(fields[1]);
+				lineItem.setSubscriberLastName(fields[2]);
+				lineItem.setSubscriberMiddleName(fields[3]);
+				lineItem.setSubscriberSuffix(fields[4]);
+				lineItem.setSubscriberMedicaidID(fields[5]);
+				lineItem.setSubscriberAddress(fields[6]);
+				lineItem.setSubscriberCity(fields[7]);
+				lineItem.setSubscriberState(fields[8]);
+				lineItem.setSubscriberZipCode(fields[9]);
+				lineItem.setSubscriberDOB(fields[10]);
+				lineItem.setSubscriberGender(fields[11]);
+				lineItem.setSubscriberSSN(fields[12]);
+				lineItem.setChargedAmount(fields[13]);
+				lineItem.setPlaceofService(fields[14]);
+				lineItem.setClaimNumber(fields[15]);
+				lineItem.setClaimType(fields[16]);
+				lineItem.setPrincipalDiagnosis(fields[17]);
+				lineItem.setProcedureCode(fields[18]);
+				lineItem.setProcedureCodeModifierNum1(fields[19]);
+				lineItem.setProcedureCodeModifierNum2(fields[20]);
+				lineItem.setProcedureCodeModifierNum3(fields[21]);
+				lineItem.setProcedureCodeModifierNum4(fields[22]);
+				lineItem.setNumberofUnits(fields[23]);
+				lineItem.setDateofService(fields[24]);
+				lineItem.setStartTime(fields[25]);
+				lineItem.setDuration(fields[26]);
+				lineItem.setProviderID(fields[27]);
+				lineItem.setProviderFirstName(fields[28]);
+				lineItem.setProviderLastName(fields[29]);
+				lineItem.setProviderMiddleName(fields[30]);
+				lineItem.setProviderSuffix(fields[31]);
+				lineItem.setProviderCredentials(fields[32]);
+				lineItem.setCoreServiceCode(fields[33]);
+				lineItem.setModalityCode(fields[34]);
+				lineItem.setProgramCode(fields[35]);
+				lineItem.setEmergencyInd(fields[36]);
+				lineItem.setEncounterID(fields[37]);
+				lineItem.setRevenueCode(fields[38]);
+				lineItem.setSpecialStudiesCode1(fields[39]);
+				lineItem.setSpecialStudiesCode2(fields[40]);
+				lineItem.setNonMedicaidID(fields[41]);
+				lineItem.setNonMedicaidPayerSource(fields[42]);
+				lineItem.setRenderingProviderNPI(fields[43]);
+				lineItem.setSecondDiagnosis(fields[44]);
+				lineItem.setNonMedicaidFlag(fields[45]);
+				lineItem.setOverrideFlag(fields[46]);
+				lineItem.setCcarOnFile(fields[47]);
+				lineItem.setSubmitterDefined(fields[48]);
 				// The ENC file record length is not constant
-				if (individualLineEntries.length > 49) {
-					lineItem.setThirdDiagnosis(individualLineEntries[49]);
+				if (fields.length > 49) {
+					lineItem.setThirdDiagnosis(fields[49]);
 				}
-				if (individualLineEntries.length > 50) {
-					lineItem.setFourthDiagnosis(individualLineEntries[50]);
+				if (fields.length > 50) {
+					lineItem.setFourthDiagnosis(fields[50]);
 				}
-				if (individualLineEntries.length > 51) {
-					lineItem.setLeaveblank30(individualLineEntries[51]);
+				if (fields.length > 51) {
+					lineItem.setLeaveblank30(fields[51]);
 				}
-				if (individualLineEntries.length > 52) {
-					lineItem.setServicingProviderID(individualLineEntries[52]);
+				if (fields.length > 52) {
+					lineItem.setServicingProviderID(fields[52]);
 				}
-				if (individualLineEntries.length > 53) {
-					lineItem.setServiceProviderFirst(individualLineEntries[53]);
+				if (fields.length > 53) {
+					lineItem.setServiceProviderFirst(fields[53]);
 				}
-				if (individualLineEntries.length > 54) {
-					lineItem.setServiceProviderLast(individualLineEntries[54]);	
+				if (fields.length > 54) {
+					lineItem.setServiceProviderLast(fields[54]);	
 				}
-				if (individualLineEntries.length > 55) {
-					lineItem.setServiceProviderMiddle(individualLineEntries[55]);
+				if (fields.length > 55) {
+					lineItem.setServiceProviderMiddle(fields[55]);
 				}
-				if (individualLineEntries.length > 56) {
-					lineItem.setServiceProviderSuffix(individualLineEntries[56]);
+				if (fields.length > 56) {
+					lineItem.setServiceProviderSuffix(fields[56]);
 				}
-				if (individualLineEntries.length > 57) {
-					lineItem.setServiceProviderCredentials(individualLineEntries[57]);
+				if (fields.length > 57) {
+					lineItem.setServiceProviderCredentials(fields[57]);
 				}
-				if (individualLineEntries.length > 58) {
-					lineItem.setServiceProviderNPI(individualLineEntries[58]);
+				if (fields.length > 58) {
+					lineItem.setServiceProviderNPI(fields[58]);
 				}
-				if (individualLineEntries.length > 59) {
-					lineItem.setOtherPayerCode(individualLineEntries[59]);
+				if (fields.length > 59) {
+					lineItem.setOtherPayerCode(fields[59]);
 				}
-				if (individualLineEntries.length > 60) {
-					lineItem.setOtherPayerDescription(individualLineEntries[60]);
+				if (fields.length > 60) {
+					lineItem.setOtherPayerDescription(fields[60]);
 				}
-				if (individualLineEntries.length > 61) {
-					lineItem.setOtherPayerAmount(individualLineEntries[61]);
+				if (fields.length > 61) {
+					lineItem.setOtherPayerAmount(fields[61]);
 				}
-				if (individualLineEntries.length > 62) {
-					lineItem.setOtherPayerId(individualLineEntries[62]);
+				if (fields.length > 62) {
+					lineItem.setOtherPayerId(fields[62]);
 				}
-				if (individualLineEntries.length > 63) {
-					lineItem.setAssignBenefitsFlag(individualLineEntries[63]);
+				if (fields.length > 63) {
+					lineItem.setAssignBenefitsFlag(fields[63]);
 				}
-				if (individualLineEntries.length > 64) {
-					lineItem.setBillingProviderNPI(individualLineEntries[64]);
+				if (fields.length > 64) {
+					lineItem.setBillingProviderNPI(fields[64]);
 				} else {
 					// Sometimes billingProviderNPI is not present
 					lineItem.setBillingProviderNPI("");

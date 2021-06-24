@@ -31,26 +31,26 @@ public class ErrorLineItemDAO {
 			// Read in each line item
 			System.out.println("BEFORE Total ERRORS read in = " + errorList.size());
 			while ((line = lnr.readLine()) != null) {
-				String[] individualLineEntries = line.split("\t");
+				String[] fields = line.split("\t");
 				ErrorLineItem errorItem = new ErrorLineItem();
-				System.out.println("ERROR FILE - Number Fields = " + individualLineEntries.length);
+				System.out.println("ERROR FILE - Number Error Line Item Fields = " + fields.length);
 
-				errorItem.setFilename(individualLineEntries[0]);
-				errorItem.setRecordNum(individualLineEntries[1]);
-				errorItem.setClaimNum(individualLineEntries[2]);
-				errorItem.setMemberNum(individualLineEntries[3]);
-				errorItem.setServiceDate(individualLineEntries[4]);
-				errorItem.setProvFirst(individualLineEntries[5]);
-				errorItem.setProvLast(individualLineEntries[6]);
-				errorItem.setErrorNum(individualLineEntries[7]);
-				errorItem.setMedicaid(individualLineEntries[8]);
-				errorItem.setSuppliedValue(individualLineEntries[9]);
+				errorItem.setFilename(fields[0]);
+				errorItem.setRecordNum(fields[1]);
+				errorItem.setClaimNum(fields[2]);
+				errorItem.setMemberNum(fields[3]);
+				errorItem.setServiceDate(fields[4]);
+				errorItem.setProvFirst(fields[5]);
+				errorItem.setProvLast(fields[6]);
+				errorItem.setErrorNum(fields[7]);
+				errorItem.setMedicaid(fields[8]);
+				errorItem.setSuppliedValue(fields[9]);
 				// The size of the error file record is not constant.
-				if (individualLineEntries.length > 10) {
-					errorItem.setDerivedValue(individualLineEntries[10]);
+				if (fields.length > 10) {
+					errorItem.setDerivedValue(fields[10]);
 				}
-				if (individualLineEntries.length > 10) {
-					errorItem.setEncounterId(individualLineEntries[11]);	
+				if (fields.length > 10) {
+					errorItem.setEncounterId(fields[11]);	
 				}
 				
 				System.out.println("Beacon Record Number, Claim Number = '"+errorItem.getRecordNum()+","+errorItem.getClaimNum()+"'");				

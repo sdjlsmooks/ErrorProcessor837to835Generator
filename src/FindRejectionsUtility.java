@@ -31,13 +31,21 @@ public class FindRejectionsUtility {
 	 * Map - Final entries   (BeaconEncounterID, EncounterLineItem)
 	 */	
 	private HashMap<String, EncounterLineItem> finalEncFileEncounters = new HashMap<>();
-
 	
 	/**
 	 * Contents of the 837 - Entries - (BeaconEncounterID, Loop2000ABillingProviderDetail) 
 	 */
 	private HashMap<String,Loop2000ABillingProviderDetail> original837Detail = new HashMap<>();
 
+
+	/**
+	 * Maps Beacon Error Codes to X12 Error Codes
+	 * Used in creation of the denial 835s (send in the X12 equivalent of the
+	 * Beacon error code.  Used for generating DENIAL 835s 
+	 *    NOT IMPLEMENTED YET
+	 */
+	private HashMap<String,String> beaconToX12ErrorMap = new HashMap<>();	
+	
 	public void readInOriginal837Information() {
 		Original837DAO the837DAO = new Original837DAO(original837FileName);
 		original837Detail = the837DAO.getOriginal837Detail();
@@ -58,6 +66,12 @@ public class FindRejectionsUtility {
 		finalEncFileEncounters = eliDAO.getAcceptedEncounterMap();
 	}
 
+	public void readInBeaconToX12Mapping() {
+		BeaconToX12DAO btx12DAO = new BeaconToX12DAO();
+		
+		beaconToX12ErrorMap = btx12DAO.readInBeaconToX12Mapping();
+	}
+	
 	
 	
 	public FindRejectionsUtility() {
@@ -73,6 +87,8 @@ public class FindRejectionsUtility {
 		System.out.println("Original 837 Filename:       " + original837FileName);
 		System.out.println("Original Encounter Filename: " + originalEncounterFile);
 		System.out.println("Final Encounter Filename:    " + originalEncounterFile);
+		
+		readInBeaconToX12Mapping();
 		readInOriginal837Information();
 		readInOriginalEncounterFile();
 		readInFinalEncounterFile();

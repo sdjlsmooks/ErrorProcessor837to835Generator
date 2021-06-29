@@ -38,9 +38,6 @@ public class ErrorProcessor837to835Generator {
 	private String output835Directory = "";
 
 	
-	
-	
-	
 	/**
 	 * Contents of the 837 - Entries - (BeaconEncounterID, Loop2000ABillingProviderDetail) 
 	 */

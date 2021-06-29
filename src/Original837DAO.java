@@ -65,10 +65,8 @@ public class Original837DAO {
 					System.out.println("Line Item Control Number: " + sln.getLiControlNumber().getReferenceIdentification());
 					
 					// Save Original Source of Truth data for error processing				
-					String serviceLineNumberBeaconEncounterID = loop2000ABillingProviderDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2000CPatientHierarchicalLevel().get(0).getLoop2300ClaimInformation().get(0).getLoop2400ServiceLineNumber().get(0).getLiControlNumber().getReferenceIdentification().toString();
+					String serviceLineNumberBeaconEncounterID = loop2000ABillingProviderDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2000CPatientHierarchicalLevel().get(0).getLoop2300ClaimInformation().get(0).getLoop2400ServiceLineNumber().get(0).getLiControlNumber().getReferenceIdentification().toString().trim();
 					original837Detail.put(serviceLineNumberBeaconEncounterID, loop2000ABillingProviderDetail);
-					
-					System.out.println("\n\n");
 				}
 				System.out.println("Total Original 837 Claims - " + original837Detail.size());			
 			} catch (SAXException sae) {

@@ -70,6 +70,9 @@ public class FindRejectionsUtility {
 		finalEncounterFile = args[2];
 		
 		System.out.println("Args:  " + args[0] + " " + args[1]);
+		System.out.println("Original 837 Filename:       " + original837FileName);
+		System.out.println("Original Encounter Filename: " + originalEncounterFile);
+		System.out.println("Final Encounter Filename:    " + originalEncounterFile);
 		readInOriginal837Information();
 		readInOriginalEncounterFile();
 		readInFinalEncounterFile();
@@ -112,9 +115,6 @@ public class FindRejectionsUtility {
 		FindRejectionsUtility instance = new FindRejectionsUtility();
 		
 		instance.run(args);
-
-		
-		
 	}
 
 }

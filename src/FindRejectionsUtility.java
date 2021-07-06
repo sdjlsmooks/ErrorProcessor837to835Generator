@@ -1,8 +1,10 @@
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Set;
 
@@ -28,6 +30,11 @@ public class FindRejectionsUtility {
 	 * Original 837 Detail filename
 	 */
 	private String original837FileName = null;
+	
+	/**
+	 * Desired Output File
+	 */
+	private String outputFileName = null;
 
 	/**
 	 * Map - Original entries   (BeaconEncounterID, EncounterLineItem)
@@ -84,7 +91,7 @@ public class FindRejectionsUtility {
 		FatalRejection retVal = null;
 	
 		try {
-			// The error list may need to be dynamically created from the read in Beacon-to-X12 mapping file.
+			// The error list will probably need to be dynamically created from the read in Beacon-to-X12 mapping file.
 			String findRejectionSQL = "select top 1 EncounterId,Error,l.ts from dwh.dbo.HS_Encounters_logs l "+  
 					                  " left outer join dwh.dbo.HS_Encounters_removed r on l.EncounterId = r.Encounter_ID "+
 					                  " where l.filename='"+FilenameUtils.getName(finalEncounterFile)+ "' and "+ 
@@ -122,14 +129,19 @@ public class FindRejectionsUtility {
 	}
 
 	public void run(String[] args) {
-		original837FileName = args[0];
-		originalEncounterFile = args[1];
-		finalEncounterFile = args[2];
+
+		if (args.length >= 4) {
+			original837FileName = args[0];
+			originalEncounterFile = args[1];
+			finalEncounterFile = args[2];
+			outputFileName = args[3];
+		}
 		
 		System.out.println("Args:  " + args[0] + " " + args[1]);
 		System.out.println("Original 837 Filename:       " + original837FileName);
 		System.out.println("Original Encounter Filename: " + originalEncounterFile);
 		System.out.println("Final Encounter Filename:    " + finalEncounterFile);
+		System.out.println("Desired Outuput Filename:    " + outputFileName);
 		
 		readInBeaconToX12Mapping();
 		readInOriginal837Information();
@@ -169,13 +181,15 @@ public class FindRejectionsUtility {
 		
 		Set<String> potentialFatalRejections = differences.toSet();
 		
-		ArrayList<FatalRejection> foundFatalRejections = new ArrayList<>();
-		
-		for (String rejectionEncounterID : potentialFatalRejections) {
-			FatalRejection fr = findFatalRejection(rejectionEncounterID);
-			System.out.println("Fatal Rejection: "+fr);
+		try (PrintStream ps = new PrintStream(new File(outputFileName))) {
+			for (String rejectionEncounterID : potentialFatalRejections) {
+				FatalRejection fr = findFatalRejection(rejectionEncounterID);
+				ps.println(fr.getEncounterID()+"\t"+fr.getRejectionCode());
+				System.out.println("Fatal Rejection: "+fr);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
-		
 	}
 	
 	public static void main(String[] args) {
@@ -186,3 +200,4 @@ public class FindRejectionsUtility {
 	}
 
 }
+

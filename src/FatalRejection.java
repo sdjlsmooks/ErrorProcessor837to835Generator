@@ -27,4 +27,9 @@ public class FatalRejection {
 		rejectionCode = rejCode;
 	}
 
+	@Override
+	public String toString() {
+		return "FatalRejection [encounterID=" + encounterID + ", rejectionCode=" + rejectionCode + "]";
+	}
+
 }

@@ -1,7 +1,14 @@
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Set;
 
 import org.apache.commons.collections4.SetUtils;
+import org.apache.commons.collections4.SetUtils.SetView;
+import org.apache.commons.io.FilenameUtils;
 
 import solutions.health.X12HCCProfessional.X12_837.Loop2000ABillingProviderDetail;
 
@@ -71,11 +78,47 @@ public class FindRejectionsUtility {
 		
 		beaconToX12ErrorMap = btx12DAO.readInBeaconToX12Mapping();
 	}
+
 	
+	public FatalRejection findFatalRejection(String encounterID) {
+		FatalRejection retVal = null;
 	
+		try {
+			// The error list may need to be dynamically created from the read in Beacon-to-X12 mapping file.
+			String findRejectionSQL = "select top 1 EncounterId,Error,l.ts from dwh.dbo.HS_Encounters_logs l "+  
+					                  " left outer join dwh.dbo.HS_Encounters_removed r on l.EncounterId = r.Encounter_ID "+
+					                  " where l.filename='"+FilenameUtils.getName(finalEncounterFile)+ "' and "+ 
+					                  " l.EncounterId='"+encounterID+"' and "+ 
+					                  " Error in (48, 85, 34, 39, 46, 47, 54, 59, 64, 77, 94, 100, 110, 112, 11, 12, 22, 23, 24, 38, 49, 50, 52, 53, 74, 86, 113, 114) "+
+					                  " order by Error desc,l.ts desc";
+			
+//			System.out.println("--- Query:");
+//			System.out.println(findRejectionSQL);
+//			System.out.println("--- END Query:");
+			
+			Connection sqlConn = SQLServerConnection.getInstance().getConnection();
+			
+			PreparedStatement statement = sqlConn.prepareStatement(findRejectionSQL);
+			ResultSet result = statement.executeQuery();
+			while (result.next()) {
+				String foundFatalEncounterID = result.getString("EncounterId");
+				String foundFatalRejectionCode = result.getString("Error");
+				
+				FatalRejection fr = new FatalRejection(foundFatalEncounterID, foundFatalRejectionCode);
+				retVal = fr;
+//				System.out.println("FatalRejection: "+fr);
+			}
+			
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		 
+		return retVal;
+	}
 	
 	public FindRejectionsUtility() {
- 
+		// Auto-generated constructor
 	}
 
 	public void run(String[] args) {
@@ -86,7 +129,7 @@ public class FindRejectionsUtility {
 		System.out.println("Args:  " + args[0] + " " + args[1]);
 		System.out.println("Original 837 Filename:       " + original837FileName);
 		System.out.println("Original Encounter Filename: " + originalEncounterFile);
-		System.out.println("Final Encounter Filename:    " + originalEncounterFile);
+		System.out.println("Final Encounter Filename:    " + finalEncounterFile);
 		
 		readInBeaconToX12Mapping();
 		readInOriginal837Information();
@@ -120,9 +163,18 @@ public class FindRejectionsUtility {
 		
 		
 		System.out.println("Differences between original Encounter File and Final Encounter File");
-		System.out.println(SetUtils.difference(originalEncFileEncouters.keySet(), finalEncFileEncounters.keySet()));
+		SetView<String> differences = SetUtils.difference(originalEncFileEncouters.keySet(), finalEncFileEncounters.keySet());
+		System.out.println(differences);
 		System.out.println();
-
+		
+		Set<String> potentialFatalRejections = differences.toSet();
+		
+		ArrayList<FatalRejection> foundFatalRejections = new ArrayList<>();
+		
+		for (String rejectionEncounterID : potentialFatalRejections) {
+			FatalRejection fr = findFatalRejection(rejectionEncounterID);
+			System.out.println("Fatal Rejection: "+fr);
+		}
 		
 	}
 	

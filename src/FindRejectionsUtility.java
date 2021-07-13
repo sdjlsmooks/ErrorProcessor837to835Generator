@@ -184,7 +184,7 @@ public class FindRejectionsUtility {
 		try (PrintStream ps = new PrintStream(new File(outputFileName))) {
 			for (String rejectionEncounterID : potentialFatalRejections) {
 				FatalRejection fr = findFatalRejection(rejectionEncounterID);
-				ps.println(fr.getEncounterID()+"\t"+fr.getRejectionCode());
+				ps.println(fr.toTabbed());
 				System.out.println("Fatal Rejection: "+fr);
 			}
 		} catch (IOException e) {

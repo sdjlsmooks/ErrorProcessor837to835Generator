@@ -31,5 +31,13 @@ public class FatalRejection {
 	public String toString() {
 		return "FatalRejection [encounterID=" + encounterID + ", rejectionCode=" + rejectionCode + "]";
 	}
+	
+	public String toTabbed() {
+		return encounterID+"\t"+rejectionCode;
+	}
+	
+	public String toCSV() {
+		return encounterID+","+rejectionCode;
+	}
 
 }

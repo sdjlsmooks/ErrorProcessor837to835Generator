@@ -2,6 +2,7 @@
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.text.ParseException;
@@ -35,8 +36,15 @@ public class ErrorProcessor837to835Generator {
 	private String encounterFileName = "";
 	private String errorFilename = "";
 	private String logFilename = "";
+	private String rejectionFilename = "";
 	private String output835Directory = "";
 
+	/**
+	 * Exception Report - This is the report of Encounter IDs that will require
+	 * human intervention (lack of detail in 837 file, etc.  Program cannot resolve
+	 * error
+	 */
+	PrintStream exceptionReport;
 	
 	/**
 	 * Contents of the 837 - Entries - (BeaconEncounterID, Loop2000ABillingProviderDetail) 
@@ -77,6 +85,16 @@ public class ErrorProcessor837to835Generator {
 	 *     the 835, but not posting, more processing needed.
 	 */
 	private HashMap<String, ProcessedClaim> acceptedClaims = new HashMap<>();
+	
+	/**
+	 * From FindRejectionsUtility - Read in the rejected claims that were found.  This is
+	 * needed due to the fact it was discovered later, what is read from the database
+	 * does not necessary have all the information needed.  The last file does not have
+	 * the fatal rejections.  Those have to be found by an external utility and passed
+	 * in.  These are those rejections.
+	 *  
+	 */
+	private HashMap<String, FatalRejection> fatalRejections = new HashMap<>();
 	
 	/**
 	 * For Report on Claims Processed
@@ -213,9 +231,13 @@ public class ErrorProcessor837to835Generator {
 		encounterFileName = args[1];
 		errorFilename = args[2];
 		logFilename = args[3];
-		output835Directory = args[4];
+		rejectionFilename = args[4];
+		output835Directory = args[5];
 
+		
+		
 		try {
+			exceptionReport = new PrintStream(new File(output835Directory+"/ExceptionReport.txt"));
 			x12835Factory = X12835Factory.getInstance();
 		} catch (IOException | SAXException e) {
 			
@@ -230,6 +252,11 @@ public class ErrorProcessor837to835Generator {
 
 	}
 
+	@Override
+	public void finalize() {
+		exceptionReport.close();
+	}
+	
 	public void readInBeaconToX12Mapping() {
 		BeaconToX12DAO btx12DAO = new BeaconToX12DAO();
 		
@@ -493,6 +520,7 @@ public class ErrorProcessor837to835Generator {
 			Loop2000ABillingProviderDetail acceptedClaimBillingDetail = original837Detail.get(acceptedClaim);
 			if (acceptedClaimBillingDetail == null) {
 				System.out.println("NO DETAIL FOR ACCEPTED: "+acceptedClaim+" moving on");
+				exceptionReport.println("Exception - Accepted Claim: "+acceptedClaim);
 				unprocessedInsufficientInformation.add(acceptedClaim);
 				continue; // No detail for the accepted claim, move on.
 			}
@@ -785,12 +813,15 @@ public class ErrorProcessor837to835Generator {
 		// *****MONDAY***** - Here is the same for the Rejected claims - Loop through ALL rejected Encounters
 		System.out.println("GenerateRejected: keySet.size() = "+rejectedClaims.keySet().size());
 		// Here is the actual CLAIM  -  CLP	 and SVC segment information
-		solutions.health.X12HCCProfessional.X12_835.Loop2000Detail loop2000Detail = new solutions.health.X12HCCProfessional.X12_835.Loop2000Detail();
+		int headerNumberCounter = 0;
+		//for (String rejectedClaim : rejectedClaims.keySet()) {
 		transactionSet.setLoop2000Detail(new ArrayList<solutions.health.X12HCCProfessional.X12_835.Loop2000Detail>());
-		for (String rejectedClaim : rejectedClaims.keySet()) {
-			Loop2000ABillingProviderDetail rejectedClaimBillingDetail = original837Detail.get(rejectedClaim);			
+		for (String rejectedClaim : fatalRejections.keySet()) {
+			Loop2000ABillingProviderDetail rejectedClaimBillingDetail = original837Detail.get(rejectedClaim);
+			solutions.health.X12HCCProfessional.X12_835.Loop2000Detail loop2000Detail = new solutions.health.X12HCCProfessional.X12_835.Loop2000Detail();
 			if (rejectedClaimBillingDetail == null) {
 				System.out.println("NO DETAIL FOR REJECTED: "+rejectedClaim+" moving on");
+				exceptionReport.println("Exception - Rejected Claim: "+rejectedClaim);
 				unprocessedInsufficientInformation.add(rejectedClaim);
 				continue; // Sometimes the original 837 does not contain all 837 details, move on.
 			}
@@ -800,7 +831,7 @@ public class ErrorProcessor837to835Generator {
 			
 			// LX segment (header)
 			solutions.health.X12HCCProfessional.X12_835.HeaderNumber headerNumber = new solutions.health.X12HCCProfessional.X12_835.HeaderNumber();
-			headerNumber.setAssignedNumber(1);
+			headerNumber.setAssignedNumber(++headerNumberCounter);
 			
 			++totalNumberOfSegments;
 			loop2000Detail.setHeaderNumber(new ArrayList<>());
@@ -811,13 +842,13 @@ public class ErrorProcessor837to835Generator {
 			solutions.health.X12HCCProfessional.X12_835.ClaimPaymentInformation claimPaymentInfo = new solutions.health.X12HCCProfessional.X12_835.ClaimPaymentInformation();
 			
 			// This is the ***NEXTGEN Counter ID***		
-			nextGenEncounterID = rejectedClaimPayerPayeeBillingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2000CPatientHierarchicalLevel().get(0).getLoop2300ClaimInformation().get(0).getClaimInformation().getClaimSubmitterIdentifier();
+			nextGenEncounterID = rejectedClaimBillingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2000CPatientHierarchicalLevel().get(0).getLoop2300ClaimInformation().get(0).getClaimInformation().getClaimSubmitterIdentifier();
 			claimPaymentInfo.setClaimSubmitIdentifierWithFacility(nextGenEncounterID);
 			claimPaymentInfo.setClaimStatusCode("1");
 			
 			// HERE IS WHERE the BRP and CLP segment need to sum up according 
 			// to the balancing rules of the 835 Implementation Guide.
-			String claimPaymentAmountStr = rejectedClaimPayerPayeeBillingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2000CPatientHierarchicalLevel().get(0).getLoop2300ClaimInformation().get(0).getClaimInformation().getMonetaryAmount();
+			String claimPaymentAmountStr = rejectedClaimBillingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2000CPatientHierarchicalLevel().get(0).getLoop2300ClaimInformation().get(0).getClaimInformation().getMonetaryAmount();
 			Double claimPaymentAmount = Double.parseDouble(claimPaymentAmountStr);
 			totalPaymentForThis835 += 0;
 			bpr.setMonetaryAmount(Double.toString(totalPaymentForThis835));
@@ -931,11 +962,11 @@ public class ErrorProcessor837to835Generator {
 			solutions.health.X12HCCProfessional.X12_835.PatientName patientName = new solutions.health.X12HCCProfessional.X12_835.PatientName();
 			patientName.setEntityIDCode("QC");// Implementation Guide QC==>Patient Name
 			patientName.setEntityTypeQualifier("1"); // Implementation Guide 1==>Person
-			patientName.setLastName(rejectedClaimPayerPayeeBillingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2010BASubscriberName().getPatientName().getLastName());
-			patientName.setFirstName(rejectedClaimPayerPayeeBillingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2010BASubscriberName().getPatientName().getFirstName());
-			patientName.setMiddleName(rejectedClaimPayerPayeeBillingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2010BASubscriberName().getPatientName().getMiddleName());
-			patientName.setIdCodeQualifier(rejectedClaimPayerPayeeBillingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2010BASubscriberName().getPatientName().getIdCodeQualifier()); 
-			currentMemberNumber = rejectedClaimPayerPayeeBillingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2010BASubscriberName().getPatientName().getIdCode();
+			patientName.setLastName(rejectedClaimBillingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2010BASubscriberName().getPatientName().getLastName());
+			patientName.setFirstName(rejectedClaimBillingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2010BASubscriberName().getPatientName().getFirstName());
+			patientName.setMiddleName(rejectedClaimBillingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2010BASubscriberName().getPatientName().getMiddleName());
+			patientName.setIdCodeQualifier(rejectedClaimBillingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2010BASubscriberName().getPatientName().getIdCodeQualifier()); 
+			currentMemberNumber = rejectedClaimBillingDetail.getLoop2000BSubscriberHierarchicalLevel().get(0).getLoop2010BASubscriberName().getPatientName().getIdCode();
 			patientName.setIdCode(currentMemberNumber);
 			
 			// Add to final output.
@@ -1141,15 +1172,17 @@ public class ErrorProcessor837to835Generator {
 			
 			// Need at least 1 valid rejected Beacon Encounter ID to retrieve Payer/Payee Identification Information
 			String aValidRejectedBeaconEncounterID = null;  
-			for (String rejectedBeaconEncounterID : rejectedClaims.keySet()) {
-				
+			//for (String rejectedBeaconEncounterID : rejectedClaims.keySet()) {
+			for (String rejectedBeaconEncounterID : fatalRejections.keySet()) {			
 				Set<String> original837KeySet = original837Detail.keySet();
 				if (!(original837KeySet.contains(rejectedBeaconEncounterID))) {
 					System.out.println("Rejected Beacon Encounter: "+rejectedBeaconEncounterID+" Not in original 837s, NO SOURCE DATA moving on");
+					exceptionReport.println("Exception - Rejection: "+rejectedBeaconEncounterID);
 					continue; // sometimes the 837 file does not contain
 				}
-				else {
+				else {					
 					aValidRejectedBeaconEncounterID = rejectedBeaconEncounterID;
+					System.out.println("Payer/Payee ID - Found Valid Rejected Beancon ID: "+aValidRejectedBeaconEncounterID);
 					break;
 				}
 			}
@@ -1314,12 +1347,23 @@ public class ErrorProcessor837to835Generator {
 		}
 	}
 
+	public void readInRejectedClaimsInformation() {
+		try {
+			FatalRejectionDAO dao = new FatalRejectionDAO(rejectionFilename);
+			
+			fatalRejections = dao.getFatalRejections();
+			System.out.println("Read In Rejection Filename: "+rejectionFilename);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
 	/**
 	 * @param args
 	 */
 	public static void main(String[] args) {
 
-		if (args.length < 5) {
+		if (args.length < 6) {
 			System.out.println(
 					"Usage:  java -jar ErrorProcessor.jar <837 filename> <Encounter filename> <Error filename> <Log filename> <Output 835 Directory>");
 			System.out.println("The <Output 835 Directory> should initially be empty and will have an \"accepted\" and a \"rejected\" ");
@@ -1332,7 +1376,7 @@ public class ErrorProcessor837to835Generator {
 		processor.readInEncounterFile(); // load in the .ENC file from Beacon
 		processor.readInErrorFile();  // load in the _err.txt file from Beacon
 		processor.readInOriginal837Information();  // Original 837 ==> SOURCE OF TRUTH
-		
+		processor.readInRejectedClaimsInformation(); // read in the output of find rejections utility. 
 		processor.findProcessedClaims(); // Load in accepted/rejected claim sets from the database
 		                                 // These are what MOCKINGBIRD marked as accepted/rejected
 		

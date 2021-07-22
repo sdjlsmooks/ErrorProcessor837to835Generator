@@ -31,8 +31,10 @@ public class FatalRejectionDAO {
 				}
 			}
 		} catch (FileNotFoundException e) {
-			
-			e.printStackTrace();
+			System.out.println("Fatal Rejection File Not Found: " + fatalRejectionFilename);
+			System.out.println("System Exiting");
+			//e.printStackTrace(); - uncomment for debugging if needed
+			System.exit(0);
 		} catch (IOException e) {			
 			e.printStackTrace();
 		}

@@ -317,13 +317,10 @@ public class ErrorProcessor837to835Generator {
 	 * @return The list of errors for that encounter ID.  NULL if none found
 	 */
 	public List<ErrorLineItem> getErrorsForEncounterID(String encounterID) {
-		ArrayList<ErrorLineItem> retVal = null;
+		ArrayList<ErrorLineItem> retVal = new ArrayList<>();;
 		
 		for (ErrorLineItem eli : errorList) {
 			if (eli.getEncounterId().equals(encounterID)) {
-				if (retVal == null) {
-					retVal = new ArrayList<>();				
-				}
 				retVal.add(eli);
 			}
 		}		
@@ -510,7 +507,7 @@ public class ErrorProcessor837to835Generator {
 		// Add the Loop 1000B (N1/N3/N4 to the final output)
 		transactionSet.setLoop1000BPayeeIdentification(loop1000BPayeeIdentification);
 		
-		// *****MONDAY***** - HERE IS WHERE YOU NEED TO LOOP THROUGH ALL ORIGINAL 837 Loop 2000 Detail informations
+		// HERE IS WHERE YOU NEED TO LOOP THROUGH ALL ORIGINAL 837 Loop 2000 Detail informations
 		int headerNumberCounter = 1;
 		transactionSet.setLoop2000Detail(new ArrayList<solutions.health.X12HCCProfessional.X12_835.Loop2000Detail>());
 		System.out.println("Generate Accepted: keySet.size() = "+acceptedClaims.keySet().size());
@@ -810,11 +807,10 @@ public class ErrorProcessor837to835Generator {
 
 		
 		
-		// *****MONDAY***** - Here is the same for the Rejected claims - Loop through ALL rejected Encounters
-		System.out.println("GenerateRejected: keySet.size() = "+rejectedClaims.keySet().size());
+		// Here is the same for the REJECTED claims - Loop through ALL rejected Encounters
+		
 		// Here is the actual CLAIM  -  CLP	 and SVC segment information
 		int headerNumberCounter = 0;
-		//for (String rejectedClaim : rejectedClaims.keySet()) {
 		transactionSet.setLoop2000Detail(new ArrayList<solutions.health.X12HCCProfessional.X12_835.Loop2000Detail>());
 		for (String rejectedClaim : fatalRejections.keySet()) {
 			Loop2000ABillingProviderDetail rejectedClaimBillingDetail = original837Detail.get(rejectedClaim);
@@ -852,12 +848,11 @@ public class ErrorProcessor837to835Generator {
 			Double claimPaymentAmount = Double.parseDouble(claimPaymentAmountStr);
 			totalPaymentForThis835 += 0;
 			bpr.setMonetaryAmount(Double.toString(totalPaymentForThis835));
+			
 			claimPaymentInfo.setMonetaryAmount(Double.toString(claimPaymentAmount));	// SUBMITTED CHARGES --> CLP03	== Amount4 == 0 ALL ADJUSTMENTS ARE SERVICE LINE LEVEL
 			claimPaymentInfo.setMonetaryAmount2(Double.toString(0));  // AMOUNT PAID == 0 -->  How will this affect balancing?  Amount5 = SUM(CAS Monetary Amounts)  Amount4 - Amount == CLP04
-			claimPaymentInfo.setMonetaryAmount3(Double.toString(0)); //   SO SUM(CAS Monetary Amount) == CLP03(claimPaymentAmount)
-			
-			//claimPaymentInfo.setMonetaryAmount3(Double.toString(0)); // PATIENT RESPOSIBILITY
-			claimPaymentInfo.setClaimFileIndicatorCode("MC"); // According to Implementation guide MC==Medicaid
+			claimPaymentInfo.setMonetaryAmount3(Double.toString(0)); //   SO SUM(CAS Monetary Amount) == CLP03(claimPaymentAmount) == PATIENT RESPONSIBILITY
+			claimPaymentInfo.setClaimFileIndicatorCode("MC");   // According to Implementation guide MC==Medicaid
 			claimPaymentInfo.setReferenceIdentification("1");
 			claimPaymentInfo.setFacilityCode("53");
 			
@@ -1172,7 +1167,6 @@ public class ErrorProcessor837to835Generator {
 			
 			// Need at least 1 valid rejected Beacon Encounter ID to retrieve Payer/Payee Identification Information
 			String aValidRejectedBeaconEncounterID = null;  
-			//for (String rejectedBeaconEncounterID : rejectedClaims.keySet()) {
 			for (String rejectedBeaconEncounterID : fatalRejections.keySet()) {			
 				Set<String> original837KeySet = original837Detail.keySet();
 				if (!(original837KeySet.contains(rejectedBeaconEncounterID))) {

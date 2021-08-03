@@ -184,12 +184,15 @@ public class FindRejectionsUtility {
 		try (PrintStream ps = new PrintStream(new File(outputFileName))) {
 			for (String rejectionEncounterID : potentialFatalRejections) {
 				FatalRejection fr = findFatalRejection(rejectionEncounterID);
-				ps.println(fr.toTabbed());
+				if (fr != null) {
+					ps.println(fr.toTabbed());
+				}
 				System.out.println("Fatal Rejection: "+fr);
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		System.out.println("END Writing file FindRejectionsUtility: "+outputFileName);
 	}
 	
 	public static void main(String[] args) {
@@ -197,6 +200,7 @@ public class FindRejectionsUtility {
 		FindRejectionsUtility instance = new FindRejectionsUtility();
 		
 		instance.run(args);
+		System.out.println("END FindRejectionsUtility");
 	}
 
 }

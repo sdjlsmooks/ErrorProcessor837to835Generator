@@ -116,6 +116,8 @@ public class ErrorProcessor837to835Generator {
 	 */
 	private Set<String> unprocessedInsufficientInformation = new HashSet<>();
 
+
+	private String aValidBeaconEncounterID = null; // Needed to obtain Payer/Payee information later.
 	
 
 	/**
@@ -1023,7 +1025,7 @@ public class ErrorProcessor837to835Generator {
 				case 1:
 					if (x12Error != null) {
 						casServiceAdjustment.setServiceARCode2(x12Error);
-						casServiceAdjustment.setMonetaryAmount2("0.0");  // SPECIAL CASE - For 1st error, set adjustment amount to tota
+						casServiceAdjustment.setMonetaryAmount2("0.0");  // SPECIAL CASE - For 1st error, set adjustment amount to total
 																				 // All other 0 to keep balancing working
 																				 // This will need to be tested to see if NextGen accepts it.
 					                                                             // It may not if it checks the maximum allowed amount for the
@@ -1167,6 +1169,9 @@ public class ErrorProcessor837to835Generator {
 			
 			// Need at least 1 valid rejected Beacon Encounter ID to retrieve Payer/Payee Identification Information
 			String aValidRejectedBeaconEncounterID = null;  
+			if (fatalRejections.keySet().size() == 0) {
+				System.out.println("No Fatal Rejections - there will be no rejected file produced.");
+			}
 			for (String rejectedBeaconEncounterID : fatalRejections.keySet()) {			
 				Set<String> original837KeySet = original837Detail.keySet();
 				if (!(original837KeySet.contains(rejectedBeaconEncounterID))) {
@@ -1177,8 +1182,12 @@ public class ErrorProcessor837to835Generator {
 				else {					
 					aValidRejectedBeaconEncounterID = rejectedBeaconEncounterID;
 					System.out.println("Payer/Payee ID - Found Valid Rejected Beancon ID: "+aValidRejectedBeaconEncounterID);
+					exceptionReport.println("Exception - Rejected Claim: "+rejectedBeaconEncounterID);
 					break;
 				}
+			}
+			if (aValidRejectedBeaconEncounterID == null) { // For debug purposes only
+				System.out.println("NO REJECTED BEACON IDs in the original 835 data, file will be empty");
 			}
 			if (aValidRejectedBeaconEncounterID != null) {
 				
@@ -1242,12 +1251,15 @@ public class ErrorProcessor837to835Generator {
 			
 			// Loop through all accepted encounters
 			// Need at least 1 valid Beacon Encounter to retrieve the Payer/Payee Identification Information
-			String aValidBeaconEncounterID = null;
+			//String aValidBeaconEncounterID = null;
+			
+
 			for (String beaconEncounterID: acceptedClaims.keySet()) {
 				
 				Set<String> original837KeySet = original837Detail.keySet();
 				if (!(original837KeySet.contains(beaconEncounterID))) {
 					System.out.println("Beacon Encounter: "+beaconEncounterID+" Not in original 837s, Not in original 837s, NO SOURCE DATA moving on");
+					exceptionReport.println("Exception - Accepted Claim: "+beaconEncounterID);
 					continue; // sometimes the 837 file does not contain all Beacon Encounters
 				}
 				else {

@@ -62,11 +62,15 @@ public class EncounterLineItemDAO {
 			int recordNumber=1;
 			while ((line = lnr.readLine()) != null) {
 				String[] fields = line.split("\t");
+				if (fields.length < 48) {
+					continue; // Sometimes the files contain blank lines, skip over these.
+				}
 				EncounterLineItem lineItem = new EncounterLineItem();
 				System.out.println("Number Encounter Line Item fields = " + fields.length);
 				lineItem.setRecordNumber(recordNumber);
 				++recordNumber; // increment on its own seperate line to help with debugging
 								// makes an easy breakpoint
+				System.out.println("lineItem: "+lineItem+" "+fields);
 				lineItem.setRecordType(fields[0]);
 				lineItem.setSubscriberFirstName(fields[1]);
 				lineItem.setSubscriberLastName(fields[2]);

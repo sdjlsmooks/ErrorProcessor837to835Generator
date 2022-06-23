@@ -17,6 +17,8 @@ import solutions.health.X12HCCProfessional.X12_837.TransactionSet;
 import solutions.health.X12HCCProfessional.X12_837.X12837;
 import solutions.health.X12HCCProfessional.X12_837.X12837Factory;
 
+
+
 public class Original837DAO {
 
 	/**

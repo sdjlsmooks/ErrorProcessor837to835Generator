@@ -38,6 +38,8 @@ public class ErrorProcessor837to835Generator {
 	private String rejectionFilename = "";
 	private String output835Directory = "";
 
+	private String checkNumber = "";
+	
 	/**
 	 * Exception Report - This is the report of Encounter IDs that will require
 	 * human intervention (lack of detail in 837 file, etc. Program cannot resolve
@@ -422,7 +424,7 @@ public class ErrorProcessor837to835Generator {
 		bpr.setPaymentMethodCode("NON");
 
 		// Comment out of 5/24/2022 - Per Terri, hard code BPR16 (Check Issue Date/EFT
-		// Effective Date) for 1 orun
+		// Effective Date) for 1 run
 		// 5/24/2022 - Per Terri, hard code the Check Issue Date (EFT Effective Date)
 		// for 1 particular run
 		// Re-enabled old code on 6/20/2022
@@ -437,9 +439,12 @@ public class ErrorProcessor837to835Generator {
 		// TRN Segment
 		solutions.health.X12HCCProfessional.X12_835.ReAssociationTraceNumber trn = new solutions.health.X12HCCProfessional.X12_835.ReAssociationTraceNumber();
 		trn.setTraceTypeCode("1"); // According to implementation guide '1' -> 'Current Transaction Trace Number'
-		Integer todaysDateAsTRNNumber = Integer.parseInt(todaysDateStr);
-		trn.setReferenceIdentification(todaysDateAsTRNNumber.toString()); // Dummy value - according to IG - "Check or
-																			// EFT Trace Number" - Use Todays Date
+		//Integer todaysDateAsTRNNumber = Integer.parseInt(todaysDateStr);
+		//trn.setReferenceIdentification(todaysDateAsTRNNumber.toString()); // Dummy value - according to IG - "Check or
+		// EFT Trace Number" - Use Todays Date
+		
+		// PER BECKY (Beatriz Granillo) - 08/04/2022 - Set TRN02 to match the output file name.
+		trn.setReferenceIdentification(checkNumber);
 		trn.setOriginatingCompanyIdentifier("81-1725341"); // Hard coded value from Terri in requirements analysis
 		++totalNumberOfSegments;
 		transactionSet.setReAssociationTraceNumber(trn);
@@ -1328,9 +1333,16 @@ public class ErrorProcessor837to835Generator {
 
 	public void generateAcceptedRecords835() {
 		try {
+			String baseName = FilenameUtils.getBaseName(encounterFileName);
 			File acceptedPath = new File(output835Directory + "\\accepted");
 			org.apache.commons.io.FileUtils.forceMkdir(acceptedPath);
 
+			// Generate Check Number based on filename - Result of meeting from 08/04/2022
+			// Per BECKY (Beatriz Granillo)
+			String[] baseNameParts = baseName.split("_");
+			checkNumber = baseNameParts[0];
+			
+			
 			System.out.println("Total Number of Accepted Encounters to process: " + encFileEncouters.keySet().size());
 
 			// Loop through all accepted encounters
@@ -1382,7 +1394,7 @@ public class ErrorProcessor837to835Generator {
 
 				System.out.println(acceptedX12835Str);
 
-				String baseName = FilenameUtils.getBaseName(encounterFileName);
+				
 				String acceptedFilename = output835Directory + "\\accepted\\Output835_" + baseName + "_accepted.x12";
 				System.out.println("Writing to file: '" + acceptedFilename + "'");
 
@@ -1489,6 +1501,7 @@ public class ErrorProcessor837to835Generator {
 		processor.findProcessedClaims(); // Load in accepted/rejected claim sets from the database
 											// These are what MOCKINGBIRD marked as accepted/rejected
 
+		
 		processor.generateAcceptedRecords835();
 		processor.generatedRejectedRecords835();
 		processor.generateOutputReport();

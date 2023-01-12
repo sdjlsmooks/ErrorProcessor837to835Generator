@@ -1484,7 +1484,7 @@ public class ErrorProcessor837to835Generator {
 
 		if (args.length < 6) {
 			System.out.println(
-					"Usage:  java -jar ErrorProcessor.jar <837 filename> <Encounter filename> <Error filename> <Log filename> <Output 835 Directory>");
+					"Usage:  java -jar ErrorProcessor.jar <837 filename> <Encounter filename> <Error filename> <Log filename> <Rejection filename> <Output 835 Directory>");
 			System.out.println(
 					"The <Output 835 Directory> should initially be empty and will have an \"accepted\" and a \"rejected\" ");
 			System.out.println(
